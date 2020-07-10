@@ -5,6 +5,10 @@ HTFanControl is an application meant to control fans in your home theater in ord
 
 The program is meant to run in the background and be controlled through a web interface, typically from your smartphone.
 
+### User Demo Video
+
+[![User Demo Video](https://img.youtube.com/vi/iROCqS2yFdc/0.jpg)](https://www.youtube.com/watch?v=iROCqS2yFdc)
+
 ### Wind Tracks
 
 HTFanControl uses specially created wind track text files for each movie with coded time stamps and wind speeds.
