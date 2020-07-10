@@ -32,6 +32,7 @@
 			const data = {
 				LircIP: document.getElementById('LircIP').value,
 				LircPort: document.getElementById('LircPort').value,
+                LircRemote: document.getElementById('LircRemote').value,
 				MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
 				MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
 				GlobalOffset: document.getElementById('GlobalOffset').value,
@@ -162,6 +163,10 @@
 	<div class="nrow">
 		<div class="nitem" style="flex-grow: 2;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
 		<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="LircPort" value="{LircPort}"></div>
+	</div>
+
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 1;"><b>LIRC Remote Name</b><input type="text" class="form-control" id="LircRemote" value="{LircRemote}"></div>
 	</div>
 
 	<div class="nrow">

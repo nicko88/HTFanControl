@@ -253,6 +253,7 @@ namespace HTFanControl
 
             html = html.Replace("{LircIP}", _HTFanCtrl._lircIP);
             html = html.Replace("{LircPort}", _HTFanCtrl._lircPort);
+            html = html.Replace("{LircRemote}", _HTFanCtrl._lircRemote);
 
             if (_HTFanCtrl._mediaPlayerType == "MPC")
             {
@@ -345,6 +346,7 @@ namespace HTFanControl
 
                 _HTFanCtrl._lircIP = data.RootElement.GetProperty("LircIP").GetString();
                 _HTFanCtrl._lircPort = data.RootElement.GetProperty("LircPort").GetString();
+                _HTFanCtrl._lircRemote = data.RootElement.GetProperty("LircRemote").GetString();
                 _HTFanCtrl._mediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._mediaPlayerPort = data.RootElement.GetProperty("MediaPlayerPort").GetString();
                 _HTFanCtrl._globalOffsetMS = data.RootElement.GetProperty("GlobalOffset").GetString();

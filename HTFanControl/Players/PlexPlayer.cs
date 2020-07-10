@@ -53,7 +53,7 @@ namespace HTFanControl
                 XDocument timeXML = XDocument.Load(timeStream);
                 XElement video = timeXML.Descendants("Timeline").Where(x => x.Attribute("type").Value == "video").First();
 
-                VideoTime = Int64.Parse(video.Attribute("time").Value);
+                VideoTime = Int64.Parse(video.Attribute("time").Value) + 500;
 
                 string state = video.Attribute("state").Value;
                 string fileKey = video.Attribute("ratingKey").Value;
