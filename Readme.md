@@ -17,7 +17,7 @@ These wind tracks can also be downloaded through the HTFanControl web interface 
 
 A companion app called WindTrackCreator has been created to help the process of making wind tracks for your movies.
 
-You can find the WindTrackCreator project [here](https://github.com/nicko88/HTPCRemote).
+You can find the WindTrackCreator project [here](https://github.com/nicko88/WindTrackCreator).
 
 ### Getting Started
 
