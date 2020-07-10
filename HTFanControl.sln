@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30104.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HTFanControl", "HTFanControl\HTFanControl.csproj", "{0CD5C424-C125-4389-9151-6805035B38CD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanTrayIcon", "FanTrayIcon\FanTrayIcon.csproj", "{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+		ReleaseLinux|Any CPU = ReleaseLinux|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CD5C424-C125-4389-9151-6805035B38CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.ReleaseLinux|Any CPU.ActiveCfg = ReleaseLinux|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.ReleaseLinux|Any CPU.Build.0 = ReleaseLinux|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.ReleaseLinux|Any CPU.ActiveCfg = Release|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.ReleaseLinux|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9DD83935-CA4C-4052-A06F-FDF389380694}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
+	<Configurations>Debug;Release;ReleaseLinux</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLinux|AnyCPU'">
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="System.Net.WebHeaderCollection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="TrayIcon.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="html\50-cloud-init.yaml" />
+    <None Remove="html\add.html" />
+    <None Remove="html\download.html" />
+    <None Remove="html\downloadlist.html" />
+    <None Remove="html\edit.html" />
+    <None Remove="html\fantester.html" />
+    <None Remove="html\manage.html" />
+    <None Remove="html\raspiwifi.html" />
+    <None Remove="html\selectplexplayer.html" />
+    <None Remove="html\settings.html" />
+    <None Remove="html\settingslinux.html" />
+    <None Remove="html\status.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="html\50-cloud-init.yaml" />
+    <EmbeddedResource Include="html\selectplexplayer.html" />
+    <EmbeddedResource Include="html\download.html" />
+    <EmbeddedResource Include="html\add.html" />
+    <EmbeddedResource Include="html\fantester.html" />
+    <EmbeddedResource Include="html\edit.html" />
+    <EmbeddedResource Include="html\manage.html" />
+    <EmbeddedResource Include="html\downloadlist.html" />
+    <EmbeddedResource Include="html\raspiwifi.html" />
+    <EmbeddedResource Include="html\settingslinux.html" />
+    <EmbeddedResource Include="html\status.html" />
+    <EmbeddedResource Include="html\settings.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.24" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<ProjectReference Include="..\FanTrayIcon\FanTrayIcon.csproj" />
+  </ItemGroup>
+
+</Project>

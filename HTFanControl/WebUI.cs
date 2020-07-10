@@ -1,0 +1,746 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Text.Json;
+using System.Collections.Generic;
+using System.Web;
+using System.Diagnostics;
+using System.Xml.Linq;
+
+namespace HTFanControl
+{
+    class WebUI
+    {
+        private readonly string _version = "Beta 14";
+        private readonly Thread _httpThread;
+        private readonly HTFanControl _HTFanCtrl;
+        private bool _waitForFile = false;
+
+        public WebUI()
+        {
+            _httpThread = new Thread(StartListen);
+            _httpThread.Start();
+
+            _HTFanCtrl = new HTFanControl();
+        }
+
+        private void StartListen()
+        {
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://*:5500/");
+            listener.Start();
+
+            while (true)
+            {
+                IAsyncResult result = listener.BeginGetContext(new AsyncCallback(ProcessRequest), listener);
+                result.AsyncWaitHandle.WaitOne();
+            }
+        }
+
+        private void ProcessRequest(IAsyncResult result)
+        {
+            if (_HTFanCtrl != null)
+            {
+                HttpListener listener = (HttpListener)result.AsyncState;
+                HttpListenerContext context = listener.EndGetContext(result);
+                HttpListenerRequest request = context.Request;
+                HttpListenerResponse response = context.Response;
+
+                string htmlResponse = "";
+                switch (request.RawUrl)
+                {
+                    case "/":
+                        htmlResponse = StatusPage(request, "status");
+                        break;
+                    case "/statusdata":
+                        htmlResponse = GetStatusData(request, "statusdata");
+                        break;
+                    case "/currentmovie":
+                        htmlResponse = GetCurrentMovie(request, "currentmovie");
+                        break;
+                    case "/settings":
+                        htmlResponse = SettingsPage(request, "settings");
+                        break;
+                    case "/savesettings":
+                        SaveSettings(request, "savesettings");
+                        break;
+                    case "/raspiwifi":
+                        htmlResponse = RasPiWiFiPage(request, "raspiwifi");
+                        break;
+                    case "/savewifi":
+                        SaveWiFi(request, "savewifi");
+                        break;
+                    case "/downloadlist":
+                        htmlResponse = DownloadListPage(request, "downloadlist");
+                        break;
+                    case "/download":
+                        htmlResponse = DownloadPage(request, "download");
+                        break;
+                    case "/manage":
+                        htmlResponse = ManagePage(request, "manage");
+                        break;
+                    case "/edit":
+                        htmlResponse = EditPage(request, "edit");
+                        break;
+                    case "/add":
+                        htmlResponse = GetHtml("add");
+                        break;
+                    case "/uploadlocal":
+                        _waitForFile = true;
+                        UploadLocal(request, "uploadlocal");
+                        break;
+                    case "/rename":
+                        RenameFile(request, "rename");
+                        break;
+                    case "/delete":
+                        _waitForFile = true;
+                        DeleteFile(request, "delete");
+                        break;
+                    case "/save":
+                        SaveFile(request, "save");
+                        break;
+                    case "/selectplexplayer":
+                        htmlResponse = GetHtml("selectplexplayer");
+                        break;
+                    case "/getplexplayers":
+                        htmlResponse = GetPlexPlayer(request, "getplexplayers");
+                        break;
+                    case "/saveplexplayer":
+                        _waitForFile = true;
+                        SavePlexPlayer(request, "saveplexplayer");
+                        break;
+                    case "/reload":
+                        _HTFanCtrl.ReInitialize();
+                        break;
+                    case "/toggle":
+                        _HTFanCtrl.ToggleFan();
+                        break;
+                    case "/fantester":
+                        htmlResponse = GetHtml("fantester");
+                        break;
+                    case "/fancmd":
+                        FanCmd(request, "fancmd");
+                        break;
+                    case "/clearerror":
+                        _HTFanCtrl._errorStatus = "";
+                        break;
+                    case "/shutdown":
+                        Environment.Exit(0);
+                        break;
+                    default:
+                        break;
+                }
+
+                byte[] buffer = Encoding.ASCII.GetBytes(htmlResponse);
+                response.ContentLength64 = buffer.Length;
+                Stream output = response.OutputStream;
+                try
+                {
+                    output.Write(buffer, 0, buffer.Length);
+                    output.Close();
+                }
+                catch { }
+            }
+        }
+
+        private string StatusPage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+
+            if (_HTFanCtrl._isEnabled)
+            {
+                html = html.Replace("{color}", "success");
+                html = html.Replace("{status}", "Fans Enabled");
+            }
+            else
+            {
+                html = html.Replace("{color}", "danger");
+                html = html.Replace("{status}", "Fans Disabled");
+            }
+
+            html = html.Replace("{version}", _version);
+
+            return html;
+        }
+
+        private string GetStatusData(HttpListenerRequest request, string pageName)
+        {
+            StringBuilder htmlData = new StringBuilder();
+
+            if (_HTFanCtrl != null)
+            {
+                htmlData.AppendLine(GetCurrentMovie(request, pageName));
+                if (_HTFanCtrl._videoTimeCodes != null)
+                {
+                    htmlData.AppendLine("<br /><br />");
+                    htmlData.AppendLine("<b>Wind track info:</b> <br />" + _HTFanCtrl._windTrackHeader);
+                    htmlData.AppendLine("Codes loaded: " + _HTFanCtrl._videoTimeCodes.Count);
+                }
+
+                htmlData.AppendLine("<br /><br />");
+                htmlData.Append("Current time: " + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
+                htmlData.AppendLine("<br /><br />");
+
+                if (_HTFanCtrl._videoTimeCodes != null)
+                {
+                    htmlData.AppendLine("<b>Current Command:</b>");
+                    htmlData.AppendLine("<br />");
+                    if (_HTFanCtrl._curCmdIndex == -1)
+                    {
+                        htmlData.AppendLine("OFF");
+                    }
+                    else
+                    {
+                        if (_HTFanCtrl._curCmdIndex > -1 && _HTFanCtrl._curCmdIndex < _HTFanCtrl._videoTimeCodes.Count)
+                        {
+                            htmlData.AppendLine(_HTFanCtrl._videoTimeCodes[_HTFanCtrl._curCmdIndex].Item1.ToString("G").Substring(2, 12) + "," + _HTFanCtrl._videoTimeCodes[_HTFanCtrl._curCmdIndex].Item2 + " (with offsets)");
+                            htmlData.AppendLine("<br />");
+                            htmlData.AppendLine(GetRawTimeCode(_HTFanCtrl._curCmdIndex) + " (raw time)");
+                        }
+                    }
+
+                    htmlData.AppendLine("<br /><br />");
+                    htmlData.AppendLine("<b>Next Command:</b>");
+                    htmlData.AppendLine("<br />");
+                    if (_HTFanCtrl._nextCmdIndex > -1 && _HTFanCtrl._nextCmdIndex < _HTFanCtrl._videoTimeCodes.Count)
+                    {
+                        htmlData.AppendLine(_HTFanCtrl._videoTimeCodes[_HTFanCtrl._nextCmdIndex].Item1.ToString("G").Substring(2, 12) + "," + _HTFanCtrl._videoTimeCodes[_HTFanCtrl._nextCmdIndex].Item2 + " (with offsets)");
+                        htmlData.AppendLine("<br />");
+                        htmlData.AppendLine(GetRawTimeCode(_HTFanCtrl._nextCmdIndex) + " (raw time)");
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+                    {
+                        htmlData.AppendLine("No wind track file found named: " + _HTFanCtrl._currentVideoFileName + ".txt");
+                        htmlData.AppendLine("<br /><br />");
+                    }
+                    htmlData.AppendLine("<b>Current Command:</b>");
+                    htmlData.AppendLine("<br />");
+                    htmlData.AppendLine("OFF");
+                }
+
+                htmlData.AppendLine("<br /><br />");
+                htmlData.AppendLine("Last error: " + _HTFanCtrl._errorStatus);
+                htmlData.AppendLine("<a href='#' onclick='clearError()'>(clear)</a>");
+                htmlData.AppendLine("<br /><br />");
+            }
+            return htmlData.ToString();
+        }
+
+        private string SettingsPage(HttpListenerRequest request, string pageName)
+        {
+            if (_waitForFile)
+            {
+                Thread.Sleep(250);
+                _waitForFile = false;
+            }
+
+            string html;
+            if (ConfigHelper.GetOS() == "win")
+            {
+                html = GetHtml("settings");
+            }
+            else
+            {
+                html = GetHtml("settingslinux");
+            }
+
+            html = html.Replace("{LircIP}", _HTFanCtrl._lircIP);
+            html = html.Replace("{LircPort}", _HTFanCtrl._lircPort);
+
+            if (_HTFanCtrl._mediaPlayerType == "MPC")
+            {
+                html = html.Replace("{MPC}", "checked");
+                html = html.Replace("{Kodi}", "");
+                html = html.Replace("{Plex}", "");
+                html = html.Replace("{lblPlayer}", "MPC-HC/BE IP");
+            }
+            else if (_HTFanCtrl._mediaPlayerType == "Kodi")
+            {
+                html = html.Replace("{MPC}", "");
+                html = html.Replace("{Kodi}", "checked");
+                html = html.Replace("{Plex}", "");
+                html = html.Replace("{lblPlayer}", "Kodi IP");
+            }
+            else
+            {
+                html = html.Replace("{MPC}", "");
+                html = html.Replace("{Kodi}", "");
+                html = html.Replace("{Plex}", "checked");
+                html = html.Replace("{lblPlayer}", "Plex Media Server IP");
+            }
+
+            html = html.Replace("{MediaPlayerIP}", _HTFanCtrl._mediaPlayerIP);
+            html = html.Replace("{MediaPlayerPort}", _HTFanCtrl._mediaPlayerPort);
+
+            html = html.Replace("{PlexToken}", _HTFanCtrl._PlexToken);
+
+            if (string.IsNullOrEmpty(_HTFanCtrl._plexClientName))
+            {
+                html = html.Replace("{PlexPlayer}", "None");
+            }
+            else
+            {
+                html = html.Replace("{PlexPlayer}", $"{_HTFanCtrl._plexClientName} ({_HTFanCtrl._plexClientIP})");
+            }
+
+            html = html.Replace("{GlobalOffset}", _HTFanCtrl._globalOffsetMS.ToString());
+            html = html.Replace("{SpinupOffset}", _HTFanCtrl._spinupOffsetMS.ToString());
+            html = html.Replace("{SpindownOffset}", _HTFanCtrl._spindownOffsetMS.ToString());
+
+            if (ConfigHelper.GetOS() != "win")
+            {
+                if(_HTFanCtrl._irChan1 == "true")
+                {
+                    html = html.Replace("{IRChan1}", "checked");
+                }
+                else
+                {
+                    html = html.Replace("{IRChan1}", "");
+                }
+                if (_HTFanCtrl._irChan2 == "true")
+                {
+                    html = html.Replace("{IRChan2}", "checked");
+                }
+                else
+                {
+                    html = html.Replace("{IRChan2}", "");
+                }
+                if (_HTFanCtrl._irChan3 == "true")
+                {
+                    html = html.Replace("{IRChan3}", "checked");
+                }
+                else
+                {
+                    html = html.Replace("{IRChan3}", "");
+                }
+                if (_HTFanCtrl._irChan4 == "true")
+                {
+                    html = html.Replace("{IRChan4}", "checked");
+                }
+                else
+                {
+                    html = html.Replace("{IRChan4}", "");
+                }
+            }
+
+            html = html.Replace("{version}", $"Version: {_version}");
+
+            return html;
+        }
+
+        private void SaveSettings(HttpListenerRequest request, string pageName)
+        {
+            string settingsInfoJSON = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(settingsInfoJSON))
+            {
+                using JsonDocument data = JsonDocument.Parse(settingsInfoJSON);
+
+                _HTFanCtrl._lircIP = data.RootElement.GetProperty("LircIP").GetString();
+                _HTFanCtrl._lircPort = data.RootElement.GetProperty("LircPort").GetString();
+                _HTFanCtrl._mediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
+                _HTFanCtrl._mediaPlayerPort = data.RootElement.GetProperty("MediaPlayerPort").GetString();
+                _HTFanCtrl._globalOffsetMS = data.RootElement.GetProperty("GlobalOffset").GetString();
+                _HTFanCtrl._spinupOffsetMS = data.RootElement.GetProperty("SpinupOffset").GetString();
+                _HTFanCtrl._spindownOffsetMS = data.RootElement.GetProperty("SpindownOffset").GetString();
+                _HTFanCtrl._mediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
+                _HTFanCtrl._PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
+
+                if (ConfigHelper.GetOS() != "win")
+                {
+                    _HTFanCtrl._irChan1 = data.RootElement.GetProperty("IRChan1").GetBoolean().ToString().ToLower();
+                    _HTFanCtrl._irChan2 = data.RootElement.GetProperty("IRChan2").GetBoolean().ToString().ToLower();
+                    _HTFanCtrl._irChan3 = data.RootElement.GetProperty("IRChan3").GetBoolean().ToString().ToLower();
+                    _HTFanCtrl._irChan4 = data.RootElement.GetProperty("IRChan4").GetBoolean().ToString().ToLower();
+                }
+
+                _HTFanCtrl.SaveSettings();
+                _HTFanCtrl.ReInitialize();
+            }
+        }
+
+        private string RasPiWiFiPage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+            try
+            {
+                string netplan = ("cat /etc/netplan/50-cloud-init.yaml").Bash();
+
+                int ssidStart = netplan.IndexOf("access-points:") + 30;
+                int ssidEnd = netplan.IndexOf("password:") - 19;
+                string ssid = netplan.Substring(ssidStart, ssidEnd - ssidStart);
+
+                int passwordStart = netplan.IndexOf("password:") + 10;
+                int passwordEnd = netplan.Length - 1;
+                string password = netplan.Substring(passwordStart, passwordEnd - passwordStart);
+
+                html = html.Replace("{ssid}", ssid);
+                html = html.Replace("{password}", new String('*', password.Length));
+            }
+            catch { }
+
+            return html;
+        }
+
+        private void SaveWiFi(HttpListenerRequest request, string pageName)
+        {
+            string wifiInfoJSON = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(wifiInfoJSON))
+            {
+                string netplan = "";
+                try
+                {
+                    Assembly assembly = Assembly.GetExecutingAssembly();
+                    string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("50-cloud-init.yaml"));
+
+                    using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                    using (StreamReader reader = new StreamReader(stream))
+                    {
+                        netplan = reader.ReadToEnd();
+                    }
+                }
+                catch { }
+
+                using JsonDocument data = JsonDocument.Parse(wifiInfoJSON);
+                string ssid = data.RootElement.GetProperty("ssid").GetString();
+                string password = data.RootElement.GetProperty("password").GetString();
+
+                netplan = netplan.Replace("{ssid}", ssid);
+                netplan = netplan.Replace("{pass}", password);
+
+                ($"echo \"{netplan}\" > /etc/netplan/50-cloud-init.yaml").Bash();
+                "netplan apply".Bash();
+            }
+        }
+
+        private string DownloadListPage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+
+            WebClient wc = new WebClient();
+            string fileIndex = wc.DownloadString("https://pastebin.com/raw/uWMR92bf");
+
+            string[] lines = fileIndex.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Click on a movie below to download wind track.");
+            foreach (string s in lines)
+            {
+                string[] values = s.Split('=');
+                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""downloadfile('https://pastebin.com/raw/{0}', '{1}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", values[1], values[0]);
+            }
+
+            html = html.Replace("{body}", sb.ToString());
+
+            return html;
+        }
+
+        private string DownloadPage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+            string downloadInfo = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(downloadInfo))
+            {
+                string[] values = downloadInfo.Split('&');
+                string[] filename = HttpUtility.UrlDecode(values[0]).Split('=');
+                string[] url = HttpUtility.UrlDecode(values[1]).Split('=');
+
+                WebClient wc = new WebClient();
+                string windCodes = wc.DownloadString(url[1]);
+
+                html = html.Replace("{filename}", filename[1]);
+                html = html.Replace("{url}", url[1]);
+                html = html.Replace("{windtrack}", windCodes.Replace("\n", "<br \\>"));
+            }
+
+            return html;
+        }
+
+        private string ManagePage(HttpListenerRequest request, string pageName)
+        {
+            if(_waitForFile)
+            {
+                Thread.Sleep(250);
+                _waitForFile = false;
+            }
+            string html = GetHtml(pageName);
+
+            string[] files = Directory.GetFiles(_HTFanCtrl._videoTimecodePath);
+            List<string> fileList = new List<string>(files);
+            fileList.Sort();
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Click on a movie below to view/edit wind track.");
+            foreach (string s in fileList)
+            {
+                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""editfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".txt", ""));
+            }
+
+            html = html.Replace("{body}", sb.ToString());
+
+            return html;
+        }
+
+        private string EditPage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+            string editInfo = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(editInfo))
+            {
+                string[] values = editInfo.Split('=');
+
+                string windCodes = "";
+                try
+                {
+                    windCodes = File.ReadAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, HttpUtility.UrlDecode(values[1])));
+                }
+                catch { }
+
+                html = html.Replace("{filename}", HttpUtility.UrlDecode(values[1]));
+                html = html.Replace("{windtrack}", windCodes.Replace("\n", "<br \\>"));
+            }
+
+            return html;
+        }
+
+        private void UploadLocal(HttpListenerRequest request, string pageName)
+        {
+            string fileInfo = GetPostBody(request);
+            try
+            {
+                int filenameStart = fileInfo.IndexOf("filename=") + 10;
+                int filenameEnd = fileInfo.IndexOf('"', filenameStart);
+                string filename = fileInfo.Substring(filenameStart, filenameEnd - filenameStart);
+
+                int filedataStart = fileInfo.IndexOf("text/plain") + 14;
+                int filedataEnd = fileInfo.IndexOf("------", filedataStart) - 4;
+                string filedata = fileInfo.Substring(filedataStart, filedataEnd - filedataStart);
+
+                File.WriteAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, filename), filedata);
+            }
+            catch { }
+        }
+
+        private void RenameFile(HttpListenerRequest request, string pageName)
+        {
+            string renameInfo = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(renameInfo) && !string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+            {
+                try
+                {
+                    File.Move(Path.Combine(_HTFanCtrl._videoTimecodePath, renameInfo), Path.Combine(_HTFanCtrl._videoTimecodePath, _HTFanCtrl._currentVideoFileName + ".txt"), true);
+                }
+                catch { }
+                _HTFanCtrl.ReInitialize();
+            }
+        }
+
+        private void DeleteFile(HttpListenerRequest request, string pageName)
+        {
+            string deleteInfo = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(deleteInfo))
+            {
+                try
+                {
+                    File.Delete(Path.Combine(_HTFanCtrl._videoTimecodePath, deleteInfo));
+                }
+                catch { }
+                _HTFanCtrl.ReInitialize();
+            }
+        }
+
+        private void SaveFile(HttpListenerRequest request, string pageName)
+        {
+            string saveInfo = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(saveInfo))
+            {
+                string[] values = saveInfo.Split('=');
+                WebClient wc = new WebClient();
+                string windCodes = wc.DownloadString(values[0]);
+
+                string fileName = values[1];
+                if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+                {
+                    fileName = _HTFanCtrl._currentVideoFileName;
+                }
+
+                try
+                {
+                    File.WriteAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, fileName + ".txt"), windCodes);
+                }
+                catch { }
+
+                _HTFanCtrl.ReInitialize();
+            }
+        }
+
+        private string GetPlexPlayer(HttpListenerRequest request, string pageName)
+        {
+            StringBuilder sb = new StringBuilder();
+            try
+            {
+                string plexRequestURL = $"http://{_HTFanCtrl._mediaPlayerIP}:{_HTFanCtrl._mediaPlayerPort}/clients?X-Plex-Token={_HTFanCtrl._PlexToken}";
+                WebRequest webRequest = WebRequest.Create(plexRequestURL);
+                webRequest.Method = "GET";
+                webRequest.Timeout = 10000;
+                webRequest.ContentType = "application/xml";
+
+                using Stream s = webRequest.GetResponse().GetResponseStream();
+                XDocument plexml = XDocument.Load(s);
+                IEnumerable<XElement> plexPlayers = plexml.Descendants("MediaContainer").Descendants("Server");
+
+                foreach (XElement player in plexPlayers)
+                {
+                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""Select('{0}', '{1}', {2}, '{3}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{0} ({1})</span>" + "\n", player.Attribute("name").Value, player.Attribute("address").Value, player.Attribute("port").Value, player.Attribute("machineIdentifier").Value);
+                }
+            }
+            catch { }
+
+            return sb.ToString();
+        }
+
+        private void SavePlexPlayer(HttpListenerRequest request, string pageName)
+        {
+            string plexInfoJSON = GetPostBody(request);
+
+            using JsonDocument data = JsonDocument.Parse(plexInfoJSON);
+
+            _HTFanCtrl._plexClientName = data.RootElement.GetProperty("name").GetString();
+            _HTFanCtrl._plexClientIP = data.RootElement.GetProperty("ip").GetString();
+            _HTFanCtrl._plexClientPort = data.RootElement.GetProperty("port").GetRawText();
+            _HTFanCtrl._plexClientGUID = data.RootElement.GetProperty("guid").GetString();
+
+            _HTFanCtrl.SaveSettings();
+            _HTFanCtrl.ReInitialize();
+        }
+
+        private string GetCurrentMovie(HttpListenerRequest request, string pageName)
+        {
+            string moviename = "No movie currently playing";
+            if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+            {
+                moviename = $"Loaded Movie: {_HTFanCtrl._currentVideoFileName}";
+
+                if(_HTFanCtrl._isPlaying)
+                {
+                    moviename = $"<b>{moviename}</b> <i>(playing)</i>";
+                }
+                else
+                {
+                    moviename = $"<b>{moviename}</b> <i>(stopped)</i>";
+                }
+            }
+
+            return moviename;
+        }
+
+        private void FanCmd(HttpListenerRequest request, string pageName)
+        {
+            string fanCmdInfo = GetPostBody(request);
+
+            byte[] cmd = Encoding.ASCII.GetBytes($"SEND_ONCE {_HTFanCtrl._lircRemote} {fanCmdInfo}\n");
+
+            Console.WriteLine($"Sent CMD: {fanCmdInfo}");
+            _HTFanCtrl.SendToLIRC(cmd);
+        }
+
+        private string GetRawTimeCode(int index)
+        {
+            double time = _HTFanCtrl._videoTimeCodes[index].Item1.TotalMilliseconds;
+            time += Convert.ToDouble(_HTFanCtrl._globalOffsetMS);
+
+            string prevCMD;
+            try
+            {
+                prevCMD = _HTFanCtrl._videoTimeCodes[index - 1].Item2;
+            }
+            catch
+            {
+                prevCMD = "OFF";
+            }
+
+            if(prevCMD == "OFF")
+            {
+                time += Convert.ToDouble(_HTFanCtrl._spinupOffsetMS);
+            }
+            else if(_HTFanCtrl._videoTimeCodes[index].Item2 == "OFF")
+            {
+                time += Convert.ToDouble(_HTFanCtrl._spindownOffsetMS);
+            }
+
+            return TimeSpan.FromMilliseconds(time).ToString("G").Substring(2, 12);
+        }
+
+        private string GetPostBody(HttpListenerRequest request)
+        {
+            string postData = null;
+            if (request.HasEntityBody)
+            {
+                using (Stream body = request.InputStream)
+                {
+                    using (StreamReader reader = new StreamReader(body, request.ContentEncoding))
+                    {
+                        postData = reader.ReadToEnd();
+                    }
+                }
+            }
+            return postData;
+        }
+
+        private string GetHtml(string fileName)
+        {
+            string html = "";
+            try
+            {
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith(fileName + ".html"));
+
+                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    html = reader.ReadToEnd();
+                }
+            }
+            catch { }
+
+            return html;
+        }
+    }
+
+    public static class ShellHelper
+    {
+        public static string Bash(this string cmd)
+        {
+            var escapedArgs = cmd.Replace("\"", "\\\"");
+
+            var process = new Process()
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/bin/bash",
+                    Arguments = $"-c \"{escapedArgs}\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+            process.Start();
+            string result = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            return result;
+        }
+    }
+}

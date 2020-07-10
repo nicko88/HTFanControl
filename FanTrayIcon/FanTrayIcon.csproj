@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+	<ProduceReferenceAssembly>true</ProduceReferenceAssembly> 
+	<UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="htfancontrol.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="htfancontrol.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,12 @@
+﻿network:
+    ethernets:
+        eth0:
+            dhcp4: true
+            optional: true
+    version: 2
+    wifis:
+        wlan0:
+            dhcp4: true
+            access-points:
+              "{ssid}":
+                password: "{pass}"

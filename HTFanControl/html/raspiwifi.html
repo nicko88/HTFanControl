@@ -1,0 +1,118 @@
+﻿<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>RasPi WiFi Settings</title>
+	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="application-name" content="HTFanControl">
+	<meta name="apple-mobile-web-app-title" content="HTFanControl">
+	<meta name="msapplication-starturl" content="/">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="icon" type="image/png" href="https://i.ibb.co/pztgM5T/HTFan-Control.png" />
+	<link rel="apple-touch-icon" type="image/png" href="https://i.ibb.co/pztgM5T/HTFan-Control.png" />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+	<script>
+		function Save()
+		{
+            var r = confirm("Are you sure?");
+			if (r == true)
+			{
+				const data = {
+                    ssid: document.getElementById('ssid').value,
+                    password: document.getElementById('password').value
+				};
+
+				fetch('savewifi', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(data),
+				});
+
+				window.location.href = "/";
+			}
+        }
+
+	</script>
+	<style>
+		* {
+			touch-action: pinch-zoom pan-y;
+		}
+		
+		body {
+			color: white;
+			background-color: black;
+		}
+
+		.ngroup {
+            outline: 1px solid gray;
+            padding-top: 6px;
+            padding-left: 4px;
+            padding-right: 4px;
+            margin-bottom: 8px;
+			display: table;
+        }
+		
+		.nrow {
+            display: flex;
+        }
+		
+		.nitem {
+            margin-bottom: 6px;
+            flex-shrink: 1;
+        }
+		
+		ul {
+            display: flex;
+            margin-left: -15px;
+            margin-right: -15px;
+        }
+
+        li {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .nav-link {
+            padding-left: 0;
+            padding-right: 0;
+        }
+	</style>
+</head>
+<body>
+<div class="container body-content">
+
+	<ul class="nav nav-tabs bg-dark sticky-top">
+		<li class="nav-item">
+			<a class="nav-link text-muted" href="/">Status</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link text-muted" href="settings">General</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link active bg-dark text-white" href="raspiwifi">RasPi WiFi</a>
+		</li>
+	</ul>
+
+
+<h3>WiFi Settings</h3>
+<div class="form-row ngroup">
+<div class="nrow">
+	<div class="nitem" style="flex-grow: 2;"><b>SSID</b><input type="text" class="form-control" id="ssid" value="{ssid}"></div>
+</div>
+
+<div class="nrow">
+	<div class="nitem" style="flex-grow: 1;"><b>Password</b><input type="text" class="form-control" id="password" value="{password}"></div>
+</div>
+
+</div>
+	<button onclick="Save()" class="btn btn-primary">Save Settings</button>
+</div>
+</body>
+</html>

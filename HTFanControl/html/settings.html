@@ -1,0 +1,207 @@
+﻿<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>General Settings</title>
+	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="application-name" content="HTFanControl">
+	<meta name="apple-mobile-web-app-title" content="HTFanControl">
+	<meta name="msapplication-starturl" content="/">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="icon" type="image/png" href="https://i.ibb.co/pztgM5T/HTFan-Control.png" />
+	<link rel="apple-touch-icon" type="image/png" href="https://i.ibb.co/pztgM5T/HTFan-Control.png" />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+	<script>
+		function ConfirmSave()
+		{
+            var r = confirm("Are you sure?");
+			if (r == true)
+			{
+				Save();
+				window.location.href = "/";
+			}
+		}
+
+		function Save()
+		{
+            const data = {
+                LircIP: document.getElementById('LircIP').value,
+                LircPort: document.getElementById('LircPort').value,
+                MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
+                MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
+                GlobalOffset: document.getElementById('GlobalOffset').value,
+                SpinupOffset: document.getElementById('SpinupOffset').value,
+                SpindownOffset: document.getElementById('SpindownOffset').value,
+				MediaPlayer: document.querySelector('input[name="MediaPlayer"]:checked').value,
+                PlexToken: document.getElementById('PlexToken').value
+            };
+
+            fetch('savesettings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+        }
+
+        function SelectPlexPlayer()
+		{
+			Save();
+            window.location.href = "selectplexplayer";
+        }
+
+		function mpc()
+		{
+			document.getElementById('MediaPlayerPort').value = '13579';
+			document.getElementById("lblPlayer").innerHTML = "MPC-HC/BE IP";
+			document.getElementById('plexDiv').style.display = 'none';
+		}
+		function kodi()
+		{
+			document.getElementById('MediaPlayerPort').value = '8080';
+            document.getElementById("lblPlayer").innerHTML = "Kodi IP";
+            document.getElementById('plexDiv').style.display = 'none';
+		}
+		function plex()
+		{
+			document.getElementById('MediaPlayerPort').value = '32400';
+            document.getElementById("lblPlayer").innerHTML = "Plex Media Server IP";
+            document.getElementById('plexDiv').style.display = 'block';
+		}
+
+		function showplex()
+		{
+			if (document.getElementById('Plex').checked)
+			{
+				document.getElementById('plexDiv').style.display = 'block';
+			}
+		}
+        window.addEventListener('DOMContentLoaded', showplex, false);
+	</script>
+	<style>
+		* {
+			touch-action: pinch-zoom pan-y;
+		}
+		
+		body {
+			color: white;
+			background-color: black;
+		}
+
+		.ngroup {
+            outline: 1px solid gray;
+            padding-top: 6px;
+            padding-left: 4px;
+            padding-right: 4px;
+            margin-bottom: 8px;
+			display: table;
+        }
+		
+		.nrow {
+            display: flex;
+        }
+		
+		.nitem {
+            margin-bottom: 6px;
+            flex-shrink: 1;
+        }
+		
+		ul {
+            display: flex;
+            margin-left: -15px;
+            margin-right: -15px;
+        }
+
+        li {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .nav-link {
+            padding-left: 0;
+            padding-right: 0;
+        }
+	</style>
+</head>
+<body>
+<div class="container body-content">
+
+	<ul class="nav nav-tabs bg-dark sticky-top">
+		<li class="nav-item">
+			<a class="nav-link text-muted" href="/">Status</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link active bg-dark text-white" href="settings">General</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link text-muted" href="fantester">Fan Tester</a>
+		</li>
+	</ul>
+
+<h3>Settings</h3>
+<div class="form-row ngroup">
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 2;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="LircPort" value="{LircPort}"></div>
+	</div>
+
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 1;">
+			<b>Media Player Type</b>
+			<br />
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="MPC" value="MPC" onclick="mpc()" {MPC}>
+				<label class="form-check-label" for="MPC">MPC-HC/BE</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Kodi" value="Kodi" onclick="kodi()" {Kodi}>
+				<label class="form-check-label" for="Kodi">Kodi</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Plex" value="Plex" onclick="plex()" {Plex}>
+				<label class="form-check-label" for="Plex">Plex</label>
+			</div>
+		</div>
+	</div>
+
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 2;"><b id="lblPlayer">{lblPlayer}</b><input type="text" class="form-control" id="MediaPlayerIP" value="{MediaPlayerIP}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="MediaPlayerPort" value="{MediaPlayerPort}"></div>
+	</div>
+
+	<div id="plexDiv" style="display: none; padding-bottom: 5px;">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;">
+				<b>X-Plex-Token </b><a href="https://github.com/SpaceK33z/web-to-plex/wiki/Finding-an-authentication-token---X-Plex-Token" target="_blank">[?]</a>
+				<input type="text" class="form-control" id="PlexToken" value="{PlexToken}">
+			</div>
+		</div>
+		<b>Selected Plex Player:</b> {PlexPlayer}
+		<br />
+		<button onclick="SelectPlexPlayer()" class="btn btn-primary">Select Plex Player</button>
+	</div>
+
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 1;"><b>Global Offset (ms)</b><input type="text" class="form-control" id="GlobalOffset" value="{GlobalOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>Spin Up Offset (ms)</b><input type="text" class="form-control" id="SpinupOffset" value="{SpinupOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>Spin Down Offset (ms)</b><input type="text" class="form-control" id="SpindownOffset" value="{SpindownOffset}"></div>
+	</div>
+
+</div>
+
+<div class="nrow">
+<div class="nitem" style="flex-grow: 1;"><button onclick="ConfirmSave()" class="btn btn-primary">Save Settings</button></div>
+</div>
+
+<br />
+{version}
+
+</div>
+</body>
+</html>
