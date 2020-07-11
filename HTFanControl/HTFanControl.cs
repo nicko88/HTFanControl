@@ -276,7 +276,7 @@ namespace HTFanControl
                         }
                         if (_videoTimeCodes != null)
                         {
-                            _videoTimer = new PositionTimer<(string, int)>(_videoTimeCodes.Select((v, i) => (v.Item1, (v.Item2, i))), SendCmd, ("OFF", -1));
+                            _videoTimer = new PositionTimer<(string, int)>(_videoTimeCodes.Select((v, i) => (v.Item1, (v.Item2, i))), SendCmd, 50, ("OFF", -1));//TODO: IPlayer.VideoTimeResolution
                         }
                         else
                         {

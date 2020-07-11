@@ -19,17 +19,19 @@ namespace Timers
         private readonly TimeSpan[] _positions;
         private readonly T[] _values;
         private readonly T _defaultValue;
+        private readonly long _currentPositionToleranceTicks;
+        private readonly long _skipWindowTicks;
+        private readonly Stopwatch _stopwatch;
 
-        private const long ElapsedPositionToleranceTicks = 250000;
-        private const long CurrentPositionToleranceTicks = ElapsedPositionToleranceTicks * 2;
-        private const long SkipWindowTicks = CurrentPositionToleranceTicks * 10;
-        private const long MinAdjustedIntervalTicks = 600000000;
+        private const long TicksPerMillisecond = 10000;
+        private const long SkipWindowMultiplier = 5;
+        private const long ElapsedPositionToleranceTicks = 20 * TicksPerMillisecond;
+        private const long MinAdjustedIntervalTicks = 60000 * TicksPerMillisecond;
         private const double AdjustmentFraction = 0.8;
 
         private Action<T> _action;
         private Timer _timer;
         private TimeSpan _startPosition;
-        private Stopwatch _stopwatch;
         private int _index;
         private TimeSpan _nextPosition;
         private T _lastValue;
@@ -37,8 +39,14 @@ namespace Timers
         private TaskCompletionSource<bool> _disposed;
 
         public PositionTimer(IEnumerable<(TimeSpan position, T value)> values, Action<T> action,
-            T defaultValue = default)
+            int millisecondsCurrentPositionResolution, T defaultValue = default)
         {
+            if (millisecondsCurrentPositionResolution <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(millisecondsCurrentPositionResolution),
+                    "Must be greater than 0");
+            }
+
             var orderedValues = values.OrderBy(v => v.position).ToList();
             var count = orderedValues.Count;
             _positions = new TimeSpan[count];
@@ -78,6 +86,9 @@ namespace Timers
 
             _action = action ?? throw new ArgumentNullException(nameof(action));
             _defaultValue = defaultValue;
+            _currentPositionToleranceTicks = millisecondsCurrentPositionResolution * TicksPerMillisecond;
+            _skipWindowTicks = _currentPositionToleranceTicks * SkipWindowMultiplier;
+            _stopwatch = new Stopwatch();
 
             InvokeTimerCallback();
         }
@@ -97,13 +108,13 @@ namespace Timers
                             deltaTicks = long.MaxValue;
                     }
 
-                    if (deltaTicks <= CurrentPositionToleranceTicks)
+                    if (deltaTicks <= _currentPositionToleranceTicks)
                         return true;
 
                     _stopwatch.Restart();
 
-                    if (currentPosition < timerPosition && deltaTicks <= SkipWindowTicks &&
-                        Subtract(currentPosition, _startPosition) > SkipWindowTicks)
+                    if (currentPosition < timerPosition && deltaTicks <= _skipWindowTicks &&
+                        Subtract(currentPosition, _startPosition) > _skipWindowTicks)
                     {
                         if (!_invoking && currentPosition < _nextPosition)
                             Change(currentPosition);
@@ -117,7 +128,7 @@ namespace Timers
                 {
                     if (_positions.Length > 0)
                     {
-                        _stopwatch = Stopwatch.StartNew();
+                        _stopwatch.Restart();
                         _timer = new Timer(TimerCallback);
 
                         UpdateStateAndChangeOrInvoke(currentPosition);
@@ -143,7 +154,6 @@ namespace Timers
 
                 _timer.Dispose();
                 _timer = null;
-                _stopwatch = null;
 
                 if (!_invoking && !EqualityComparer<T>.Default.Equals(_lastValue, _defaultValue))
                     InvokeTimerCallback();
