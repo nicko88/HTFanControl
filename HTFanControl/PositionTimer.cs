@@ -11,6 +11,7 @@ namespace Timers
     {
         bool Update(TimeSpan currentPosition);
         bool Stop();
+        bool TryGetNextPositions(int count, out Span<TimeSpan> nextPositions);
         ValueTask<bool> DisposeAsync(bool stop);
     }
 
@@ -162,6 +163,35 @@ namespace Timers
             return true;
         }
 
+        public bool TryGetNextPositions(int count, out Span<TimeSpan> nextPositions)
+        {
+            int nextIndex;
+            lock (_positions)
+            {
+                if (_timer == null)
+                {
+                    nextPositions = default;
+                    return false;
+                }
+
+                nextIndex = _index;
+                if (EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
+                    nextIndex++;
+            }
+
+            var length = _positions.Length - nextIndex;
+            if (count < length)
+            {
+                nextPositions = count > 0 ? new Span<TimeSpan>(_positions, nextIndex, count) : default;
+            }
+            else
+            {
+                nextPositions = new Span<TimeSpan>(_positions, nextIndex, length);
+            }
+
+            return true;
+        }
+
         public ValueTask<bool> DisposeAsync(bool stop)
         {
             lock (_positions)
@@ -174,20 +204,15 @@ namespace Timers
                     _timer?.Dispose();
                     _timer = null;
 
-                    if (_invoking)
+                    if (!_invoking)
                     {
-                        _disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    }
-                    else if (EqualityComparer<T>.Default.Equals(_lastValue, _defaultValue))
-                    {
-                        _action = null;
-                        return new ValueTask<bool>(true);
-                    }
-                    else
-                    {
-                        InvokeTimerCallback();
+                        if (EqualityComparer<T>.Default.Equals(_lastValue, _defaultValue))
+                        {
+                            _action = null;
+                            return new ValueTask<bool>(true);
+                        }
 
-                        _disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                        InvokeTimerCallback();
                     }
                 }
                 else
@@ -196,15 +221,11 @@ namespace Timers
                     _timer?.Dispose();
                     _timer = null;
 
-                    if (_invoking)
-                    {
-                        _disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    }
-                    else
-                    {
+                    if (!_invoking)
                         return new ValueTask<bool>(true);
-                    }
                 }
+
+                _disposed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
 
             return new ValueTask<bool>(_disposed.Task);
