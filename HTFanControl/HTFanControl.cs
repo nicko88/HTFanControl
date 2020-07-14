@@ -424,13 +424,28 @@ namespace HTFanControl
         private void LoadVideoTimecodes(string fileName, string filePath)
         {
             string validFileName = null;
-            if (File.Exists(Path.Combine(_videoTimecodePath, fileName + ".txt")))
+
+            //look for wind track in windtrack folder
+            try
             {
-                validFileName = Path.Combine(_videoTimecodePath, fileName + ".txt");
+                if (File.Exists(Path.Combine(_videoTimecodePath, fileName + ".txt")))
+                {
+                    validFileName = Path.Combine(_videoTimecodePath, fileName + ".txt");
+                }
             }
-            else if(File.Exists(Path.Combine(filePath, fileName + ".txt")))
+            catch { }
+
+            //if it wasnt in the windtrack folder, check the movie folder
+            if (string.IsNullOrEmpty(validFileName))
             {
-                validFileName = Path.Combine(filePath, fileName + ".txt");
+                try
+                {
+                    if (File.Exists(Path.Combine(filePath, fileName + ".txt")))
+                    {
+                        validFileName = Path.Combine(filePath, fileName + ".txt");
+                    }
+                }
+                catch { }
             }
 
             if (!string.IsNullOrEmpty(validFileName))
