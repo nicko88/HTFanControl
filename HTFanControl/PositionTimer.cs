@@ -11,7 +11,7 @@ namespace Timers
     {
         bool Update(TimeSpan currentPosition);
         bool Stop();
-        bool TryGetNextPositions(int count, out Span<TimeSpan> nextPositions);
+        bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions);
         ValueTask<bool> DisposeAsync(bool stop);
     }
 
@@ -163,7 +163,7 @@ namespace Timers
             return true;
         }
 
-        public bool TryGetNextPositions(int count, out Span<TimeSpan> nextPositions)
+        public bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions)
         {
             int nextIndex;
             lock (_positions)
@@ -182,11 +182,11 @@ namespace Timers
             var length = _positions.Length - nextIndex;
             if (count < length)
             {
-                nextPositions = count > 0 ? new Span<TimeSpan>(_positions, nextIndex, count) : default;
+                nextPositions = count > 0 ? new ReadOnlySpan<TimeSpan>(_positions, nextIndex, count) : default;
             }
             else
             {
-                nextPositions = new Span<TimeSpan>(_positions, nextIndex, length);
+                nextPositions = new ReadOnlySpan<TimeSpan>(_positions, nextIndex, length);
             }
 
             return true;
