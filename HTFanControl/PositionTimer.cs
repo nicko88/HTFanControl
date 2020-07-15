@@ -175,8 +175,11 @@ namespace Timers
                 }
 
                 nextIndex = _index;
-                if (EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
+                if (_nextPosition != TimeSpan.MinValue &&
+                    EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
+                {
                     nextIndex++;
+                }
             }
 
             var length = _positions.Length - nextIndex;
