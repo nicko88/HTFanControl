@@ -20,7 +20,7 @@ namespace Timers
         private readonly TimeSpan[] _positions;
         private readonly T[] _values;
         private readonly T _defaultValue;
-        private readonly long _currentPositionToleranceTicks;
+        private readonly long _currentPositionToleranceExclusiveTicks;
         private readonly long _skipWindowTicks;
         private readonly Stopwatch _stopwatch;
 
@@ -87,8 +87,8 @@ namespace Timers
 
             _action = action ?? throw new ArgumentNullException(nameof(action));
             _defaultValue = defaultValue;
-            _currentPositionToleranceTicks = millisecondsCurrentPositionResolution * TicksPerMillisecond;
-            _skipWindowTicks = _currentPositionToleranceTicks * SkipWindowMultiplier;
+            _currentPositionToleranceExclusiveTicks = millisecondsCurrentPositionResolution * TicksPerMillisecond;
+            _skipWindowTicks = _currentPositionToleranceExclusiveTicks * SkipWindowMultiplier;
             _stopwatch = new Stopwatch();
 
             InvokeTimerCallback();
@@ -109,7 +109,7 @@ namespace Timers
                             deltaTicks = long.MaxValue;
                     }
 
-                    if (deltaTicks <= _currentPositionToleranceTicks)
+                    if (deltaTicks < _currentPositionToleranceExclusiveTicks)
                         return true;
 
                     _stopwatch.Restart();
