@@ -27,7 +27,7 @@
             get;
         }
 
-        int RefreshInterval
+        int VideoTimeResolution
         {
             get;
         }

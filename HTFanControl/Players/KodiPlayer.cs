@@ -16,11 +16,11 @@ namespace HTFanControl
         public string FileName { get; private set; }
         public string FilePath { get; private set; }
         public string ErrorStatus { get; private set; }
-        public int RefreshInterval { get; private set; }
+        public int VideoTimeResolution { get; private set; }
 
         public KodiPlayer(string IP, string port)
         {
-            RefreshInterval = 1000;
+            VideoTimeResolution = 50;
             _IP = IP;
             _port = port;
         }

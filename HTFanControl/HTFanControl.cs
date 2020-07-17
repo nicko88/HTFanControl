@@ -14,6 +14,7 @@ namespace HTFanControl
 {
     class HTFanControl
     {
+        private string _OS = ConfigHelper.GetOS();
         public string _errorStatus;
         public long _currentVideoTime = 0;
         public string _currentVideoFileName;
@@ -27,8 +28,6 @@ namespace HTFanControl
         public List<Tuple<TimeSpan, string>> _videoTimeCodes;
 
         private readonly string _settingsPath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "HTFanControlSettings.txt");
-
-        private string _OS = ConfigHelper.GetOS();
         public string _mediaPlayerType = "MPC";
         public string _mediaPlayerIP = "127.0.0.1";
         public string _mediaPlayerPort = "13579";
@@ -50,7 +49,6 @@ namespace HTFanControl
 
         private IPositionTimer _videoTimer;
         private readonly Timer _syncTimer;
-
         private IPlayer _mediaPlayer;
 
         private Socket _lircSocket;
@@ -276,7 +274,7 @@ namespace HTFanControl
                         }
                         if (_videoTimeCodes != null)
                         {
-                            _videoTimer = new PositionTimer<(string, int)>(_videoTimeCodes.Select((v, i) => (v.Item1, (v.Item2, i))), SendCmd, 50, ("OFF", -1));//TODO: IPlayer.VideoTimeResolution
+                            _videoTimer = new PositionTimer<(string, int)>(_videoTimeCodes.Select((v, i) => (v.Item1, (v.Item2, i))), SendCmd, _mediaPlayer.VideoTimeResolution, ("OFF", -1));
                         }
                         else
                         {
@@ -301,13 +299,9 @@ namespace HTFanControl
                     _errorStatus = _mediaPlayer.ErrorStatus;
                     ReInitialize();
                 }
+            }
 
-                _syncTimer.Change(_mediaPlayer.RefreshInterval, Timeout.Infinite);
-            }
-            else
-            {
-                _syncTimer.Change(1000, Timeout.Infinite);
-            }
+            _syncTimer.Change(1000, Timeout.Infinite);
         }
 
         private void SendCmd((string cmd, int index) command)

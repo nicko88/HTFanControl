@@ -22,11 +22,11 @@ namespace HTFanControl
         public string FileName { get; private set; }
         public string FilePath { get; private set; }
         public string ErrorStatus { get; private set; }
-        public int RefreshInterval { get; private set; }
+        public int VideoTimeResolution { get; private set; }
 
         public PlexPlayer(string serverIP, string serverPort, string serverToken, string playerIP, string playerPort, string playerGUID, string playerName)
         {
-            RefreshInterval = 1000;
+            VideoTimeResolution = 1000;
 
             _serverIP = serverIP;
             _serverPort = serverPort;
