@@ -127,9 +127,10 @@ namespace Timers
                 }
                 else if (_action != null && _disposed == null)
                 {
+                    _stopwatch.Restart();
+
                     if (_positions.Length > 0)
                     {
-                        _stopwatch.Restart();
                         _timer = new Timer(TimerCallback);
 
                         UpdateStateAndChangeOrInvoke(currentPosition);
@@ -150,6 +151,8 @@ namespace Timers
         {
             lock (_positions)
             {
+                _stopwatch.Reset();
+
                 if (_timer == null)
                     return _action != null && _disposed == null;
 
@@ -171,7 +174,7 @@ namespace Timers
                 if (_timer == null)
                 {
                     nextPositions = default;
-                    return false;
+                    return _stopwatch.IsRunning;
                 }
 
                 nextIndex = _index;
@@ -206,6 +209,7 @@ namespace Timers
                 {
                     _timer?.Dispose();
                     _timer = null;
+                    _stopwatch.Reset();
 
                     if (!_invoking)
                     {
@@ -223,6 +227,7 @@ namespace Timers
                     _action = null;
                     _timer?.Dispose();
                     _timer = null;
+                    _stopwatch.Reset();
 
                     if (!_invoking)
                         return new ValueTask<bool>(true);
