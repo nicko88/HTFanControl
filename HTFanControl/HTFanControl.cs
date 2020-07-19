@@ -27,6 +27,9 @@ namespace HTFanControl
         public readonly string _videoTimecodePath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks");
         public List<Tuple<TimeSpan, string>> _videoTimeCodes;
 
+        private readonly string _lircMappingPath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "lircmapping.txt");
+        private Dictionary<string, string> _lircMapping;
+
         private readonly string _settingsPath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "HTFanControlSettings.txt");
         public string _mediaPlayerType = "MPC";
         public string _mediaPlayerIP = "127.0.0.1";
@@ -58,6 +61,8 @@ namespace HTFanControl
             LoadSettings();
             SaveSettings();
 
+            LoadLIRCMapping();
+
             SelectMediaPlayer();
 
             ConnectToLIRC();
@@ -77,6 +82,7 @@ namespace HTFanControl
             _nextCmdIndex = 0;
             _isPlaying = false;
 
+            LoadLIRCMapping();
             SelectMediaPlayer();
         }
 
@@ -247,6 +253,26 @@ namespace HTFanControl
             }
         }
 
+        private void LoadLIRCMapping()
+        {
+            _lircMapping = null;
+            if (File.Exists(_lircMappingPath))
+            {
+                _lircMapping = new Dictionary<string, string>();
+                string[] mappingFile = File.ReadAllLines(_lircMappingPath);
+
+                foreach(string s in mappingFile)
+                {
+                    try
+                    {
+                        string[] vals = s.Split('=');
+                        _lircMapping.Add(vals[1], vals[0]);
+                    }
+                    catch { }
+                }
+            }
+        }
+
         private void SyncTimerTick(object o)
         {
             SyncVideo();
@@ -311,6 +337,11 @@ namespace HTFanControl
             if(i == -1)
             {
                 fanCmd = "OFF";
+
+                if (_lircMapping != null && _lircMapping.TryGetValue("STOP", out string stopCMD))
+                {
+                    fanCmd = stopCMD;
+                }
             }
             else
             {
@@ -319,11 +350,11 @@ namespace HTFanControl
 
             try
             {
-                Console.WriteLine("Sent CMD: " + _videoTimeCodes[i].Item1.ToString("G").Substring(2, 12) + "," + fanCmd);
+                Console.WriteLine($"Sent CMD: {_videoTimeCodes[i].Item1.ToString("G").Substring(2, 12)},{fanCmd}");
             }
             catch
             {
-                Console.WriteLine("Sent CMD: OFF");
+                Console.WriteLine($"Sent CMD: {fanCmd}");
             }
 
             if (_isEnabled)
@@ -332,6 +363,11 @@ namespace HTFanControl
 
                 foreach(string cmd in cmds)
                 {
+                    if (_lircMapping != null && _lircMapping.TryGetValue(cmd, out string remote))
+                    {
+                        _lircRemote = remote;
+                    }
+
                     byte[] cmdBytes = Encoding.ASCII.GetBytes($"SEND_ONCE {_lircRemote} {cmd}\n");
                     SendToLIRC(cmdBytes);
                 }
