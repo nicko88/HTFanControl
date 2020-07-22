@@ -178,10 +178,21 @@ namespace Timers
                 }
 
                 nextIndex = _index;
-                if (_nextPosition != TimeSpan.MinValue &&
-                    EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
+                var currentPosition = GetCurrentPosition();
+                if (currentPosition < _nextPosition)
                 {
-                    nextIndex++;
+                    if (EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
+                        nextIndex++;
+                }
+                else if (currentPosition >= _positions[0])
+                {
+                    var currentValue = UpdateIndexAndGetValue(currentPosition, ref nextIndex);
+                    if (EqualityComparer<T>.Default.Equals(_lastValue, currentValue))
+                        nextIndex++;
+                }
+                else
+                {
+                    nextIndex = 0;
                 }
             }
 
@@ -269,7 +280,7 @@ namespace Timers
                         elapsedPosition = currentPosition;
                     }
 
-                    var currentValue = UpdateIndexAndGetValue(elapsedPosition);
+                    var currentValue = UpdateIndexAndGetValue(elapsedPosition, ref _index);
                     UpdateNextPosition(elapsedPosition);
 
                     if (EqualityComparer<T>.Default.Equals(_lastValue, currentValue))
@@ -326,7 +337,7 @@ namespace Timers
             {
                 _nextPosition = TimeSpan.MinValue;
             }
-            else if (EqualityComparer<T>.Default.Equals(_lastValue, UpdateIndexAndGetValue(currentPosition)))
+            else if (EqualityComparer<T>.Default.Equals(_lastValue, UpdateIndexAndGetValue(currentPosition, ref _index)))
             {
                 UpdateNextPosition(currentPosition);
 
@@ -359,29 +370,29 @@ namespace Timers
             }
         }
 
-        private T UpdateIndexAndGetValue(TimeSpan currentPosition)
+        private T UpdateIndexAndGetValue(TimeSpan currentPosition, ref int index)
         {
-            if (currentPosition >= _positions[_index])
+            if (currentPosition >= _positions[index])
             {
-                if (_index == _positions.Length - 1 || currentPosition < _positions[_index + 1])
-                    return _values[_index];
+                if (index == _positions.Length - 1 || currentPosition < _positions[index + 1])
+                    return _values[index];
 
-                _index++;
+                index++;
 
-                if (_index != _positions.Length - 1 && currentPosition >= _positions[_index + 1])
-                    _index = BinarySearch(_positions, _index + 1, _positions.Length - 1, currentPosition);
+                if (index != _positions.Length - 1 && currentPosition >= _positions[index + 1])
+                    index = BinarySearch(_positions, index + 1, _positions.Length - 1, currentPosition);
             }
             else if (currentPosition < _positions[0])
             {
-                _index = 0;
+                index = 0;
                 return _defaultValue;
             }
             else
             {
-                _index = BinarySearch(_positions, 1, _index - 1, currentPosition);
+                index = BinarySearch(_positions, 1, index - 1, currentPosition);
             }
 
-            return _values[_index];
+            return _values[index];
         }
 
         private void UpdateNextPosition(TimeSpan currentPosition)
