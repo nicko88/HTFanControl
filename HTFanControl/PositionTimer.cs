@@ -184,17 +184,17 @@ namespace Timers
                     if (EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
                         nextIndex++;
                 }
-                else if (currentPosition >= _positions[0])
+                else if (currentPosition < _positions[0])
+                {
+                    nextIndex = 0;
+                }
+                else
                 {
                     if (EqualityComparer<T>.Default.Equals(_lastValue,
                         UpdateIndexAndGetValue(currentPosition, ref nextIndex)))
                     {
                         nextIndex++;
                     }
-                }
-                else
-                {
-                    nextIndex = 0;
                 }
             }
 
