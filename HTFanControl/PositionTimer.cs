@@ -177,10 +177,10 @@ namespace Timers
                     return _stopwatch.IsRunning;
                 }
 
-                nextIndex = _index;
                 var currentPosition = GetCurrentPosition();
                 if (currentPosition < _nextPosition)
                 {
+                    nextIndex = _index;
                     if (EqualityComparer<T>.Default.Equals(_lastValue, _values[nextIndex]))
                         nextIndex++;
                 }
@@ -190,6 +190,7 @@ namespace Timers
                 }
                 else
                 {
+                    nextIndex = _index;
                     if (EqualityComparer<T>.Default.Equals(_lastValue,
                         UpdateIndexAndGetValue(currentPosition, ref nextIndex)))
                     {
