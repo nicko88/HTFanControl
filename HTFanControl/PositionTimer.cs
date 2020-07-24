@@ -298,10 +298,6 @@ namespace Timers
                     _invoking = true;
                 }
             }
-            else
-            {
-                _lastValue = _defaultValue;
-            }
 
             _action?.Invoke(_lastValue);
 
@@ -363,6 +359,7 @@ namespace Timers
         {
             if (_timer == null)
             {
+                _lastValue = _defaultValue;
                 _invoking = true;
                 ThreadPool.QueueUserWorkItem(TimerCallback, null);
             }
