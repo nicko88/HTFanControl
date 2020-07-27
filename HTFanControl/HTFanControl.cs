@@ -16,6 +16,7 @@ namespace HTFanControl
     {
         private string _OS = ConfigHelper.GetOS();
         public string _errorStatus;
+        public string _windtrackError;
         public long _currentVideoTime = 0;
         public string _currentVideoFileName;
         public string _windTrackHeader;
@@ -23,6 +24,8 @@ namespace HTFanControl
         public int _nextCmdIndex = 0;
         public bool _isPlaying = false;
         public bool _isEnabled = true;
+        public double _offset = 0;
+        public bool _offsetEnabled = false;
 
         public readonly string _videoTimecodePath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks");
         public List<Tuple<TimeSpan, string>> _videoTimeCodes;
@@ -445,7 +448,7 @@ namespace HTFanControl
             }
             catch
             {
-                _errorStatus = $"({DateTime.Now:h:mm:ss tt}{$") Cannot connect to LIRC at: {_lircIP}:{_lircPort}"}";
+                _errorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to LIRC at: {_lircIP}:{_lircPort}";
             }
 
             Thread.Sleep(25);
@@ -454,6 +457,7 @@ namespace HTFanControl
         private void LoadVideoTimecodes(string fileName, string filePath)
         {
             string validFileName = null;
+            _offset = 0;
 
             //look for wind track in windtrack folder
             try
@@ -480,6 +484,8 @@ namespace HTFanControl
 
             if (!string.IsNullOrEmpty(validFileName))
             {
+                _windtrackError = null;
+
                 SetTransmitters();
 
                 _videoTimeCodes = new List<Tuple<TimeSpan, string>>();
@@ -487,18 +493,35 @@ namespace HTFanControl
 
                 string[] lines = File.ReadAllLines(validFileName);
                 string lastCmd = "OFF";
+                double rawPrevTime = -500;
+                double actualPrevTime = -500;
 
                 double globalOffsetMS = Convert.ToDouble(_globalOffsetMS);
                 double spinupOffsetMS = Convert.ToDouble(_spinupOffsetMS);
                 double spindownOffsetMS = Convert.ToDouble(_spindownOffsetMS);
 
-                foreach (string line in lines)
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    if (line.StartsWith("#"))
+                    string line = lines[i];
+
+                    //header lines
+                    if (line.StartsWith("#") && _videoTimeCodes.Count == 0)
                     {
                         _windTrackHeader += line.TrimStart(new[] { '#', ' ' }) + "<br \\>";
+
+                        //offset line
+                        if (line.Contains("Offset:"))
+                        {
+                            try
+                            {
+                                TimeSpan ts = TimeSpan.Parse(line.Substring(line.IndexOf('(') + 1, line.LastIndexOf(')') - line.IndexOf('(') - 1));
+                                _offset = ts.TotalMilliseconds;
+                            }
+                            catch { }
+                        }
                     }
-                    else
+                    //non-comment or blank lines
+                    else if (!line.StartsWith(@"\\") && !line.StartsWith(@"//") && line.Length > 0)
                     {
                         string[] lineData = line.Split(',');
 
@@ -507,38 +530,69 @@ namespace HTFanControl
                         {
                             timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds - globalOffsetMS;
                         }
-                        catch { }
-
-                        if (timeCode != null)
+                        catch
                         {
-                            if (lastCmd == "OFF")
+                            if (_windtrackError is null)
+                            {
+                                _windtrackError = $"Bad timecode on line {i+1}: {line}";
+                            }
+                        }
+
+                        if(timeCode != null)
+                        {
+                            //apply special offset if enabled
+                            if (_offsetEnabled)
+                            {
+                                timeCode += _offset;
+                                rawPrevTime += _offset;
+                            }
+                            //skip out of order line and error
+                            if (timeCode < rawPrevTime)
+                            {
+                                if (_windtrackError is null)
+                                {
+                                    _windtrackError = $"Timecode on line {i+1} is out of order";
+                                }
+                                break;
+                            }
+
+                            rawPrevTime = (double)timeCode;
+
+                            //if command comes after OFF, add spinup offset
+                            if (lastCmd.Contains("OFF"))
                             {
                                 timeCode -= spinupOffsetMS;
                             }
-                            else if (lineData[1] == "OFF")
+                            //if command is OFF, add spindown offset
+                            else if (lineData[1].Contains("OFF"))
                             {
                                 timeCode -= spindownOffsetMS;
                             }
-
-                            if (timeCode < 0)
+                            //if offset makes timecode invalid, fix it
+                            if (timeCode < actualPrevTime+500)
                             {
+                                timeCode = actualPrevTime + 500;
+                            }
+                            //keep clearing the list if the timecode is less than or equal to 0 so that we only end up with 1 timecode at 0 at the start
+                            if(timeCode <= 0)
+                            {
+                                _videoTimeCodes.Clear();
                                 timeCode = 0;
                             }
 
                             string cmds = "";
-                            for(int i = 1; i < lineData.Length; i++)
+                            for (int j = 1; j < lineData.Length; j++)
                             {
-                                cmds += lineData[i] + ",";
+                                cmds += lineData[j] + ",";
                             }
 
                             _videoTimeCodes.Add(new Tuple<TimeSpan, string>(TimeSpan.FromMilliseconds((double)timeCode), cmds.Trim(',')));
 
                             lastCmd = lineData[1];
+                            actualPrevTime = (double)timeCode;
                         }
                     }
                 }
-
-                Console.WriteLine($"Loaded file: {fileName} - {_videoTimeCodes.Count} codes");
             }
             else
             {

@@ -35,6 +35,7 @@
     <None Remove="html\downloadlist.html" />
     <None Remove="html\edit.html" />
     <None Remove="html\fantester.html" />
+    <None Remove="html\loadedwindtrack.html" />
     <None Remove="html\manage.html" />
     <None Remove="html\raspiwifi.html" />
     <None Remove="html\selectplexplayer.html" />
@@ -45,6 +46,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="html\50-cloud-init.yaml" />
+    <EmbeddedResource Include="html\loadedwindtrack.html" />
     <EmbeddedResource Include="html\selectplexplayer.html" />
     <EmbeddedResource Include="html\download.html" />
     <EmbeddedResource Include="html\add.html" />

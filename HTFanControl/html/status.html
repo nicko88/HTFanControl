@@ -26,11 +26,17 @@
             }
 		}
 
-		function toggle()
+		function toggleFan()
 		{
-			fetch('toggle');
+			fetch('togglefan');
             location.reload();
 		}
+
+		function toggleOffset()
+		{
+            fetch('toggleoffset');
+            location.reload();
+        }
 
         function clearError()
 		{
@@ -109,7 +115,7 @@
 
 		<div id="data"></div>
 
-		<button onclick="toggle()" class="btn btn-{color}">{status}</button>
+		<button onclick="toggleFan()" class="btn btn-{color}">{status}</button>
 		<button onclick="reload()" class="btn btn-primary">Reload Wind Track</button>
 
 	</div>

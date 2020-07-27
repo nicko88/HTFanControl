@@ -15,7 +15,7 @@ namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta 15";
+        private readonly string _version = "Beta 16";
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
@@ -116,17 +116,27 @@ namespace HTFanControl
                     case "/reload":
                         _HTFanCtrl.ReInitialize();
                         break;
-                    case "/toggle":
+                    case "/togglefan":
                         _HTFanCtrl.ToggleFan();
+                        break;
+                    case "/toggleoffset":
+                        _HTFanCtrl._offsetEnabled = !_HTFanCtrl._offsetEnabled;
+                        _HTFanCtrl.ReInitialize();
                         break;
                     case "/fantester":
                         htmlResponse = GetHtml("fantester");
+                        break;
+                    case "/loadedwindtrack":
+                        htmlResponse = GetHtml("loadedwindtrack");
+                        break;
+                    case "/loadedwindtrackdata":
+                        htmlResponse = LoadedWindTrackData(request, "loadedwindtrackdata");
                         break;
                     case "/fancmd":
                         FanCmd(request, "fancmd");
                         break;
                     case "/clearerror":
-                        _HTFanCtrl._errorStatus = "";
+                        _HTFanCtrl._errorStatus = null;
                         break;
                     case "/shutdown":
                         Environment.Exit(0);
@@ -177,8 +187,25 @@ namespace HTFanControl
                 if (_HTFanCtrl._videoTimeCodes != null)
                 {
                     htmlData.AppendLine("<br /><br />");
-                    htmlData.AppendLine("<b>Wind track info:</b> <br />" + _HTFanCtrl._windTrackHeader);
+                    htmlData.AppendLine("<b>Wind track info:</b>");
+                    htmlData.AppendLine("<br />");
+                    htmlData.AppendLine(_HTFanCtrl._windTrackHeader);
                     htmlData.AppendLine("Codes loaded: " + _HTFanCtrl._videoTimeCodes.Count);
+
+                    htmlData.AppendLine("<br />");
+                    htmlData.AppendLine("<button onclick=\"window.location.href = 'loadedwindtrack';\" class=\"btn btn-primary\">View Wind Track</button>");
+
+                    if (_HTFanCtrl._offset != 0)
+                    {
+                        if (_HTFanCtrl._offsetEnabled)
+                        {
+                            htmlData.AppendLine("<button onclick=\"toggleOffset()\" class=\"btn btn-success\">Offset Enabled</button>");
+                        }
+                        else
+                        {
+                            htmlData.AppendLine("<button onclick=\"toggleOffset()\" class=\"btn btn-danger\">Offset Disabled</button>");
+                        }
+                    }
                 }
 
                 htmlData.AppendLine("<br /><br />");
@@ -197,9 +224,7 @@ namespace HTFanControl
                     {
                         if (_HTFanCtrl._curCmdIndex > -1 && _HTFanCtrl._curCmdIndex < _HTFanCtrl._videoTimeCodes.Count)
                         {
-                            htmlData.AppendLine(_HTFanCtrl._videoTimeCodes[_HTFanCtrl._curCmdIndex].Item1.ToString("G").Substring(2, 12) + "," + _HTFanCtrl._videoTimeCodes[_HTFanCtrl._curCmdIndex].Item2 + " (with offsets)");
-                            htmlData.AppendLine("<br />");
-                            htmlData.AppendLine(GetRawTimeCode(_HTFanCtrl._curCmdIndex) + " (raw time)");
+                            htmlData.AppendLine(_HTFanCtrl._videoTimeCodes[_HTFanCtrl._curCmdIndex].Item1.ToString("G").Substring(2, 12) + "," + _HTFanCtrl._videoTimeCodes[_HTFanCtrl._curCmdIndex].Item2);
                         }
                     }
 
@@ -208,9 +233,7 @@ namespace HTFanControl
                     htmlData.AppendLine("<br />");
                     if (_HTFanCtrl._nextCmdIndex > -1 && _HTFanCtrl._nextCmdIndex < _HTFanCtrl._videoTimeCodes.Count)
                     {
-                        htmlData.AppendLine(_HTFanCtrl._videoTimeCodes[_HTFanCtrl._nextCmdIndex].Item1.ToString("G").Substring(2, 12) + "," + _HTFanCtrl._videoTimeCodes[_HTFanCtrl._nextCmdIndex].Item2 + " (with offsets)");
-                        htmlData.AppendLine("<br />");
-                        htmlData.AppendLine(GetRawTimeCode(_HTFanCtrl._nextCmdIndex) + " (raw time)");
+                        htmlData.AppendLine(_HTFanCtrl._videoTimeCodes[_HTFanCtrl._nextCmdIndex].Item1.ToString("G").Substring(2, 12) + "," + _HTFanCtrl._videoTimeCodes[_HTFanCtrl._nextCmdIndex].Item2);
                     }
                 }
                 else
@@ -225,9 +248,17 @@ namespace HTFanControl
                     htmlData.AppendLine("OFF");
                 }
 
-                htmlData.AppendLine("<br /><br />");
-                htmlData.AppendLine("Last error: " + _HTFanCtrl._errorStatus);
-                htmlData.AppendLine("<a href='#' onclick='clearError()'>(clear)</a>");
+                if (_HTFanCtrl._errorStatus != null)
+                {
+                    htmlData.AppendLine("<br /><br />");
+                    htmlData.AppendLine("Last error: " + _HTFanCtrl._errorStatus);
+                    htmlData.AppendLine("<a href='#' onclick='clearError()'>(clear)</a>");
+                }
+                if (_HTFanCtrl._windtrackError != null)
+                {
+                    htmlData.AppendLine("<br /><br />");
+                    htmlData.AppendLine("Windtrack error: " + _HTFanCtrl._windtrackError);
+                }
                 htmlData.AppendLine("<br /><br />");
             }
             return htmlData.ToString();
@@ -433,7 +464,6 @@ namespace HTFanControl
             string[] lines = fileIndex.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Click on a movie below to download wind track.");
             foreach (string s in lines)
             {
                 string[] values = s.Split('=');
@@ -481,7 +511,6 @@ namespace HTFanControl
             fileList.Sort();
 
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Click on a movie below to view/edit wind track.");
             foreach (string s in fileList)
             {
                 sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""editfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".txt", ""));
@@ -629,6 +658,42 @@ namespace HTFanControl
             _HTFanCtrl.ReInitialize();
         }
 
+        private string LoadedWindTrackData(HttpListenerRequest request, string pageName)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine(GetCurrentMovie(request, pageName));
+            sb.AppendLine("<br /><br />");
+            sb.AppendLine("Current time: " + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
+            sb.AppendLine("<br /><br />");
+
+            if (_HTFanCtrl._videoTimeCodes != null)
+            {
+                for (int i = 0; i < _HTFanCtrl._videoTimeCodes.Count; i++)
+                {
+                    if(i == _HTFanCtrl._curCmdIndex)
+                    {
+                        sb.Append("<div style=\"color: green; display: inline;\">");
+                    }
+
+                    sb.AppendLine(_HTFanCtrl._videoTimeCodes[i].Item1.ToString("G").Substring(2, 12).TrimEnd() + $",{_HTFanCtrl._videoTimeCodes[i].Item2}");
+
+                    if (i == _HTFanCtrl._curCmdIndex)
+                    {
+                        sb.Append("</div>");
+                    }
+
+                    sb.AppendLine("<br />");
+                }
+            }
+            else
+            {
+                sb.AppendLine("No wind track loaded");
+            }
+
+            return sb.ToString();
+        }
+
         private string GetCurrentMovie(HttpListenerRequest request, string pageName)
         {
             string moviename = "No movie currently playing";
@@ -657,33 +722,6 @@ namespace HTFanControl
 
             Console.WriteLine($"Sent CMD: {fanCmdInfo}");
             _HTFanCtrl.SendToLIRC(cmd);
-        }
-
-        private string GetRawTimeCode(int index)
-        {
-            double time = _HTFanCtrl._videoTimeCodes[index].Item1.TotalMilliseconds;
-            time += Convert.ToDouble(_HTFanCtrl._globalOffsetMS);
-
-            string prevCMD;
-            try
-            {
-                prevCMD = _HTFanCtrl._videoTimeCodes[index - 1].Item2;
-            }
-            catch
-            {
-                prevCMD = "OFF";
-            }
-
-            if(prevCMD == "OFF")
-            {
-                time += Convert.ToDouble(_HTFanCtrl._spinupOffsetMS);
-            }
-            else if(_HTFanCtrl._videoTimeCodes[index].Item2 == "OFF")
-            {
-                time += Convert.ToDouble(_HTFanCtrl._spindownOffsetMS);
-            }
-
-            return TimeSpan.FromMilliseconds(time).ToString("G").Substring(2, 12);
         }
 
         private string GetPostBody(HttpListenerRequest request)
@@ -726,9 +764,9 @@ namespace HTFanControl
     {
         public static string Bash(this string cmd)
         {
-            var escapedArgs = cmd.Replace("\"", "\\\"");
+            string escapedArgs = cmd.Replace("\"", "\\\"");
 
-            var process = new Process()
+            Process process = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {

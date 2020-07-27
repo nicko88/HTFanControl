@@ -2,7 +2,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<title>Online Wind Track Database</title>
+	<title>Loaded Wind Track</title>
 	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,27 +17,24 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 	<script>
-		function downloadfile(url, filename)
+		async function load_data()
 		{
-            document.getElementById('url').value = url;
-			document.getElementById('filename').value = filename;
-
-            document.getElementById('downloadform').submit();
-		}
-
-		async function load_movie()
-		{
-            const response = await fetch("currentmovie")
+            const response = await fetch("loadedwindtrackdata")
             const html = await response.text();
-            document.getElementById("currentmovie").innerHTML = html;
+            document.getElementById("data").innerHTML = html;
         }
 
-		load_movie();
-        setInterval(load_movie, 1000);
+        load_data();
+        setInterval(load_data, 1000);
 	</script>
 	<style>
 		* {
 			touch-action: pinch-zoom pan-y;
+		}
+
+		button{
+			width: 200px;
+			height: 50px;
 		}
 
 		body {
@@ -77,25 +74,11 @@
 				<a class="nav-link text-muted" href="/">Status</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link text-muted" href="manage">Manage</a>
-			</li>
-			<li class="nav-item">
-				<a class="nav-link active bg-dark text-white" href="downloadlist">Download</a>
-			</li>
-			<li class="nav-item">
-				<a class="nav-link text-muted" href="add">Add</a>
+				<a class="nav-link active bg-dark text-white" href="fantester">Loaded Wind Track</a>
 			</li>
 		</ul>
 
-		<div id="currentmovie"></div>
-		Click on a movie below to download wind track.
-
-		{body}
-
-		<form method="post" id="downloadform" action="download">
-			<input type="hidden" id="filename" name="filename" value="">
-			<input type="hidden" id="url" name="url" value="">
-		</form>
+		<div id="data"></div>
 
 	</div>
 </body>
