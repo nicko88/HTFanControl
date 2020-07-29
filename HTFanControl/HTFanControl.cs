@@ -53,7 +53,7 @@ namespace HTFanControl
         public string _irChan3 = "false";
         public string _irChan4 = "false";
 
-        private IPositionTimer _videoTimer;
+        private PositionTimer _videoTimer;
         private readonly Timer _syncTimer;
         private IPlayer _mediaPlayer;
 

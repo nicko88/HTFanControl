@@ -7,15 +7,50 @@ using System.Threading.Tasks;
 
 namespace Timers
 {
-    internal interface IPositionTimer
+    internal abstract class PositionTimer
     {
-        bool Update(TimeSpan currentPosition);
-        bool Stop();
-        bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions);
-        ValueTask<bool> DisposeAsync(bool stop);
+        public abstract bool Update(TimeSpan currentPosition);
+        public abstract bool Stop();
+        public abstract bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions);
+        public abstract ValueTask<bool> DisposeAsync(bool stop);
+
+        protected static long Delta(TimeSpan t1, TimeSpan t2)
+        {
+            var deltaTicks = Subtract(t1, t2);
+
+            if (deltaTicks >= 0)
+                return deltaTicks;
+
+            deltaTicks = unchecked(-deltaTicks);
+            return deltaTicks > 0 ? deltaTicks : long.MaxValue;
+        }
+
+        protected static long Add(TimeSpan t1, TimeSpan t2)
+        {
+            var t1Ticks = t1.Ticks;
+            var t2Ticks = t2.Ticks;
+            var resultTicks = unchecked(t1Ticks + t2Ticks);
+
+            if (t1Ticks >> 63 == t2Ticks >> 63 && t1Ticks >> 63 != resultTicks >> 63)
+                return long.MaxValue;
+
+            return resultTicks;
+        }
+
+        protected static long Subtract(TimeSpan t1, TimeSpan t2)
+        {
+            var t1Ticks = t1.Ticks;
+            var t2Ticks = t2.Ticks;
+            var resultTicks = unchecked(t1Ticks - t2Ticks);
+
+            if (t1Ticks >> 63 != t2Ticks >> 63 && t1Ticks >> 63 != resultTicks >> 63)
+                return long.MaxValue;
+
+            return resultTicks;
+        }
     }
 
-    internal class PositionTimer<T> : IPositionTimer
+    internal class PositionTimer<T> : PositionTimer
     {
         private readonly TimeSpan[] _positions;
         private readonly T[] _values;
@@ -94,20 +129,14 @@ namespace Timers
             InvokeTimerCallback();
         }
 
-        public bool Update(TimeSpan currentPosition)
+        public override bool Update(TimeSpan currentPosition)
         {
             lock (_positions)
             {
                 if (_timer != null)
                 {
                     var timerPosition = GetCurrentPosition();
-                    var deltaTicks = Subtract(timerPosition, currentPosition);
-                    if (deltaTicks < 0)
-                    {
-                        deltaTicks = unchecked(-deltaTicks);
-                        if (deltaTicks < 0)
-                            deltaTicks = long.MaxValue;
-                    }
+                    var deltaTicks = Delta(timerPosition, currentPosition);
 
                     if (deltaTicks < _currentPositionToleranceExclusiveTicks)
                         return true;
@@ -147,7 +176,7 @@ namespace Timers
             return true;
         }
 
-        public bool Stop()
+        public override bool Stop()
         {
             lock (_positions)
             {
@@ -166,7 +195,7 @@ namespace Timers
             return true;
         }
 
-        public bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions)
+        public override bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions)
         {
             int nextIndex;
             lock (_positions)
@@ -212,7 +241,7 @@ namespace Timers
             return true;
         }
 
-        public ValueTask<bool> DisposeAsync(bool stop)
+        public override ValueTask<bool> DisposeAsync(bool stop)
         {
             lock (_positions)
             {
@@ -445,30 +474,6 @@ namespace Timers
             return adjustedIntervalTicks < MinAdjustedIntervalTicks
                 ? new TimeSpan(intervalTicks)
                 : new TimeSpan(adjustedIntervalTicks);
-        }
-
-        private static long Add(TimeSpan t1, TimeSpan t2)
-        {
-            var t1Ticks = t1.Ticks;
-            var t2Ticks = t2.Ticks;
-            var resultTicks = unchecked(t1Ticks + t2Ticks);
-
-            if (t1Ticks >> 63 == t2Ticks >> 63 && t1Ticks >> 63 != resultTicks >> 63)
-                return long.MaxValue;
-
-            return resultTicks;
-        }
-
-        private static long Subtract(TimeSpan t1, TimeSpan t2)
-        {
-            var t1Ticks = t1.Ticks;
-            var t2Ticks = t2.Ticks;
-            var resultTicks = unchecked(t1Ticks - t2Ticks);
-
-            if (t1Ticks >> 63 != t2Ticks >> 63 && t1Ticks >> 63 != resultTicks >> 63)
-                return long.MaxValue;
-
-            return resultTicks;
         }
     }
 }
