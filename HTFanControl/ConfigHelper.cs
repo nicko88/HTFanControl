@@ -66,6 +66,7 @@ namespace HTFanControl
             }
 
             WinRegistry.FixMSEdge();
+            WinRegistry.SetMPCHCTimerInterval();
         }
 
         public static string RunCmd(string filename, string arguments, bool admin)
