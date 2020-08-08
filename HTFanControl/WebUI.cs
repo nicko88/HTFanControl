@@ -459,18 +459,25 @@ namespace HTFanControl
             string html = GetHtml(pageName);
 
             WebClient wc = new WebClient();
-            string fileIndex = wc.DownloadString("https://pastebin.com/raw/uWMR92bf");
-
-            string[] lines = fileIndex.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
-            StringBuilder sb = new StringBuilder();
-            foreach (string s in lines)
+            try
             {
-                string[] values = s.Split('=');
-                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""downloadfile('https://pastebin.com/raw/{0}', '{1}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", values[1], values[0]);
-            }
+                string fileIndex = wc.DownloadString("https://pastebin.com/raw/uWMR92bf");
 
-            html = html.Replace("{body}", sb.ToString());
+                string[] lines = fileIndex.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+                StringBuilder sb = new StringBuilder();
+                foreach (string s in lines)
+                {
+                    string[] values = s.Split('=');
+                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""downloadfile('https://pastebin.com/raw/{0}', '{1}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", values[1], values[0]);
+                }
+
+                html = html.Replace("{body}", sb.ToString());
+            }
+            catch
+            {
+                html = html.Replace("{body}", "<br /><br />Could not connect to wind track database (pastebin.com)");
+            }
 
             return html;
         }
