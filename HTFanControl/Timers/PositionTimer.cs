@@ -65,7 +65,7 @@ namespace HTFanControl.Timers
         private const long MinAdjustedIntervalTicks = 60000 * TicksPerMillisecond;
         private const double AdjustmentFraction = 0.8;
 
-        private Action<PositionTimer<T>, T> _action;
+        private Action<PositionTimer, T> _action;
         private Timer _timer;
         private TimeSpan _startPosition;
         private int _index;
@@ -74,7 +74,7 @@ namespace HTFanControl.Timers
         private bool _invoking;
         private TaskCompletionSource<bool> _disposed;
 
-        public PositionTimer(IEnumerable<(TimeSpan position, T value)> values, Action<PositionTimer<T>, T> action,
+        public PositionTimer(IEnumerable<(TimeSpan position, T value)> values, Action<PositionTimer, T> action,
             int millisecondsCurrentPositionResolution, T defaultValue = default)
         {
             if (millisecondsCurrentPositionResolution <= 0)
