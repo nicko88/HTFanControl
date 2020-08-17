@@ -5,13 +5,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Timers
+namespace HTFanControl.Timers
 {
     internal abstract class PositionTimer
     {
         public abstract bool Update(TimeSpan currentPosition);
         public abstract bool Stop();
-        public abstract bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions);
+        public abstract bool TryGetNextPositions(out ReadOnlySpan<TimeSpan> nextPositions);
         public abstract ValueTask<bool> DisposeAsync(bool stop);
 
         protected static long Delta(TimeSpan t1, TimeSpan t2)
@@ -65,7 +65,7 @@ namespace Timers
         private const long MinAdjustedIntervalTicks = 60000 * TicksPerMillisecond;
         private const double AdjustmentFraction = 0.8;
 
-        private Action<T> _action;
+        private Action<PositionTimer, T> _action;
         private Timer _timer;
         private TimeSpan _startPosition;
         private int _index;
@@ -74,7 +74,7 @@ namespace Timers
         private bool _invoking;
         private TaskCompletionSource<bool> _disposed;
 
-        public PositionTimer(IEnumerable<(TimeSpan position, T value)> values, Action<T> action,
+        public PositionTimer(IEnumerable<(TimeSpan position, T value)> values, Action<PositionTimer, T> action,
             int millisecondsCurrentPositionResolution, T defaultValue = default)
         {
             if (millisecondsCurrentPositionResolution <= 0)
@@ -195,7 +195,7 @@ namespace Timers
             return true;
         }
 
-        public override bool TryGetNextPositions(int count, out ReadOnlySpan<TimeSpan> nextPositions)
+        public override bool TryGetNextPositions(out ReadOnlySpan<TimeSpan> nextPositions)
         {
             int nextIndex;
             lock (_positions)
@@ -228,16 +228,7 @@ namespace Timers
                 }
             }
 
-            var length = _positions.Length - nextIndex;
-            if (count < length)
-            {
-                nextPositions = count > 0 ? new ReadOnlySpan<TimeSpan>(_positions, nextIndex, count) : default;
-            }
-            else
-            {
-                nextPositions = new ReadOnlySpan<TimeSpan>(_positions, nextIndex, length);
-            }
-
+            nextPositions = new ReadOnlySpan<TimeSpan>(_positions, nextIndex, _positions.Length - nextIndex);
             return true;
         }
 
@@ -246,7 +237,7 @@ namespace Timers
             lock (_positions)
             {
                 if (_action == null || _disposed != null)
-                    return new ValueTask<bool>(false);
+                    return default;
 
                 if (stop)
                 {
@@ -328,7 +319,7 @@ namespace Timers
                 }
             }
 
-            _action?.Invoke(_lastValue);
+            _action?.Invoke(this, _lastValue);
 
             lock (_positions)
             {

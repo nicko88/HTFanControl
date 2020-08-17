@@ -8,7 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Timers;
+using HTFanControl.Timers;
 
 namespace HTFanControl
 {
@@ -333,7 +333,7 @@ namespace HTFanControl
             _syncTimer.Change(1000, Timeout.Infinite);
         }
 
-        private void SendCmd((string cmd, int index) command)
+        private void SendCmd(PositionTimer videoTimer, (string cmd, int index) command)
         {
             var (fanCmd, i) = command;
             _curCmdIndex = i;
