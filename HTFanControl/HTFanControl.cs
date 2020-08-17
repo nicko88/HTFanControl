@@ -333,7 +333,7 @@ namespace HTFanControl
             _syncTimer.Change(1000, Timeout.Infinite);
         }
 
-        private void SendCmd(PositionTimer<(string, int)> videoTimer, (string cmd, int index) command)
+        private void SendCmd(PositionTimer videoTimer, (string cmd, int index) command)
         {
             var (fanCmd, i) = command;
             _curCmdIndex = i;
