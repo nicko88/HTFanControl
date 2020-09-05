@@ -15,7 +15,7 @@ namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta 16";
+        private readonly string _version = "Beta 17";
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
