@@ -495,6 +495,7 @@ namespace HTFanControl
                 string lastCmd = "OFF";
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
+                bool isFanCmd = false;
 
                 double globalOffsetMS = Convert.ToDouble(_globalOffsetMS);
                 double spinupOffsetMS = Convert.ToDouble(_spinupOffsetMS);
@@ -525,10 +526,27 @@ namespace HTFanControl
                     {
                         string[] lineData = line.Split(',');
 
+                        // check if this timecode contains a fan command so we can apply offsets
+                        isFanCmd = false;
+                        for (int j = 1; j < lineData.Length; j++)
+                        {
+                            if (lineData[j].Equals("OFF") || lineData[j].Equals("ECO") || lineData[j].Equals("LOW") || lineData[j].Equals("MED") || lineData[j].Equals("HIGH"))
+                            {
+                                isFanCmd = true;
+                            }
+                        }
+
                         double? timeCode = null;
                         try
                         {
-                            timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds - globalOffsetMS;
+                            if (isFanCmd)
+                            {
+                                timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds - globalOffsetMS;
+                            }
+                            else
+                            {
+                                timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds;
+                            }
                         }
                         catch
                         {
@@ -558,21 +576,25 @@ namespace HTFanControl
 
                             rawPrevTime = (double)timeCode;
 
-                            //if command comes after OFF, add spinup offset
-                            if (lastCmd.Contains("OFF"))
+                            if (isFanCmd)
                             {
-                                timeCode -= spinupOffsetMS;
+                                //if command comes after OFF, add spinup offset
+                                if (lastCmd.Contains("OFF"))
+                                {
+                                    timeCode -= spinupOffsetMS;
+                                }
+                                //if command is OFF, add spindown offset
+                                else if (lineData[1].Contains("OFF"))
+                                {
+                                    timeCode -= spindownOffsetMS;
+                                }
+                                //if offset makes timecode invalid, fix it
+                                if (timeCode < actualPrevTime + 500)
+                                {
+                                    timeCode = actualPrevTime + 500;
+                                }
                             }
-                            //if command is OFF, add spindown offset
-                            else if (lineData[1].Contains("OFF"))
-                            {
-                                timeCode -= spindownOffsetMS;
-                            }
-                            //if offset makes timecode invalid, fix it
-                            if (timeCode < actualPrevTime+500)
-                            {
-                                timeCode = actualPrevTime + 500;
-                            }
+
                             //keep clearing the list if the timecode is less than or equal to 0 so that we only end up with 1 timecode at 0 at the start
                             if(timeCode <= 0)
                             {
@@ -588,8 +610,11 @@ namespace HTFanControl
 
                             _videoTimeCodes.Add(new Tuple<TimeSpan, string>(TimeSpan.FromMilliseconds((double)timeCode), cmds.Trim(',')));
 
-                            lastCmd = lineData[1];
-                            actualPrevTime = (double)timeCode;
+                            if (isFanCmd)
+                            {
+                                lastCmd = lineData[1];
+                                actualPrevTime = (double)timeCode;
+                            }
                         }
                     }
                 }

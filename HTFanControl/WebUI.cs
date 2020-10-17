@@ -680,7 +680,7 @@ namespace HTFanControl
                 {
                     if(i == _HTFanCtrl._curCmdIndex)
                     {
-                        sb.Append("<div style=\"color: green; display: inline;\">");
+                        sb.Append("<div style=\"color: lime; display: inline;\">");
                     }
 
                     sb.AppendLine(_HTFanCtrl._videoTimeCodes[i].Item1.ToString("G").Substring(2, 12).TrimEnd() + $",{_HTFanCtrl._videoTimeCodes[i].Item2}");
