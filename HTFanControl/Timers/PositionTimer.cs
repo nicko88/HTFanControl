@@ -65,7 +65,7 @@ namespace HTFanControl.Timers
         private const long MinAdjustedIntervalTicks = 60000 * TicksPerMillisecond;
         private const double AdjustmentFraction = 0.8;
 
-        private Action<PositionTimer, T> _action;
+        private volatile Action<PositionTimer, T> _action;
         private Timer _timer;
         private TimeSpan _startPosition;
         private int _index;
