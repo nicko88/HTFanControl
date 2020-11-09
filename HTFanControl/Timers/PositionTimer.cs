@@ -381,7 +381,7 @@ namespace HTFanControl.Timers
             {
                 _lastValue = _defaultValue;
                 _invoking = true;
-                ThreadPool.QueueUserWorkItem(TimerCallback, null);
+                ThreadPool.QueueUserWorkItem(state => ((PositionTimer<T>) state).TimerCallback(null), this);
             }
             else
             {
