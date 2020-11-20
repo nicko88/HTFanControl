@@ -65,7 +65,7 @@ namespace HTFanControl.Timers
         private const long MinAdjustedIntervalTicks = 60000 * TicksPerMillisecond;
         private const double AdjustmentFraction = 0.8;
 
-        private volatile Action<PositionTimer, T> _action;
+        private Action<PositionTimer, T> _action;
         private Timer _timer;
         private TimeSpan _startPosition;
         private int _index;
@@ -258,7 +258,7 @@ namespace HTFanControl.Timers
                 }
                 else
                 {
-                    _action = null;
+                    Volatile.Write(ref _action, null);
                     _timer?.Dispose();
                     _timer = null;
                     _stopwatch.Reset();
@@ -319,7 +319,7 @@ namespace HTFanControl.Timers
                 }
             }
 
-            _action?.Invoke(this, _lastValue);
+            Volatile.Read(ref _action)?.Invoke(this, _lastValue);
 
             lock (_positions)
             {
