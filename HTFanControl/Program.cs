@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 namespace HTFanControl
 {
@@ -9,7 +8,7 @@ namespace HTFanControl
     {
         static void Main(string[] args)
         {
-            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Count() > 1)
+            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1)
             {
                 Process.GetCurrentProcess().Kill();
             }

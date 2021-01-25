@@ -10,12 +10,14 @@ using System.Collections.Generic;
 using System.Web;
 using System.Diagnostics;
 using System.Xml.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta 17";
+        private readonly string _version = "Beta 18";
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
@@ -293,7 +295,7 @@ namespace HTFanControl
                 html = html.Replace("{Plex}", "");
                 html = html.Replace("{lblPlayer}", "MPC-HC/BE IP");
             }
-            else if (_HTFanCtrl._mediaPlayerType == "Kodi")
+            else if (_HTFanCtrl._mediaPlayerType.Contains("Kodi"))
             {
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "checked");
@@ -399,7 +401,7 @@ namespace HTFanControl
             }
         }
 
-        private string RasPiWiFiPage(HttpListenerRequest request, string pageName)
+        private static string RasPiWiFiPage(HttpListenerRequest request, string pageName)
         {
             string html = GetHtml(pageName);
             try
@@ -408,21 +410,21 @@ namespace HTFanControl
 
                 int ssidStart = netplan.IndexOf("access-points:") + 30;
                 int ssidEnd = netplan.IndexOf("password:") - 19;
-                string ssid = netplan.Substring(ssidStart, ssidEnd - ssidStart);
+                string ssid = netplan[ssidStart..ssidEnd];
 
                 int passwordStart = netplan.IndexOf("password:") + 10;
                 int passwordEnd = netplan.Length - 1;
-                string password = netplan.Substring(passwordStart, passwordEnd - passwordStart);
+                string password = netplan[passwordStart..passwordEnd];
 
                 html = html.Replace("{ssid}", ssid);
-                html = html.Replace("{password}", new String('*', password.Length));
+                html = html.Replace("{password}", password);
             }
             catch { }
 
             return html;
         }
 
-        private void SaveWiFi(HttpListenerRequest request, string pageName)
+        private static void SaveWiFi(HttpListenerRequest request, string pageName)
         {
             string wifiInfoJSON = GetPostBody(request);
 
@@ -434,11 +436,9 @@ namespace HTFanControl
                     Assembly assembly = Assembly.GetExecutingAssembly();
                     string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("50-cloud-init.yaml"));
 
-                    using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                    using (StreamReader reader = new StreamReader(stream))
-                    {
-                        netplan = reader.ReadToEnd();
-                    }
+                    using Stream stream = assembly.GetManifestResourceStream(resourceName);
+                    using StreamReader reader = new StreamReader(stream);
+                    netplan = reader.ReadToEnd();
                 }
                 catch { }
 
@@ -454,14 +454,14 @@ namespace HTFanControl
             }
         }
 
-        private string DownloadListPage(HttpListenerRequest request, string pageName)
+        private static string DownloadListPage(HttpListenerRequest request, string pageName)
         {
             string html = GetHtml(pageName);
 
-            WebClient wc = new WebClient();
+            HttpClient httpClient = new HttpClient();
             try
             {
-                string fileIndex = wc.DownloadString("https://pastebin.com/raw/uWMR92bf");
+                string fileIndex = httpClient.GetStringAsync("https://pastebin.com/raw/uWMR92bf").Result;
 
                 string[] lines = fileIndex.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 
@@ -482,7 +482,7 @@ namespace HTFanControl
             return html;
         }
 
-        private string DownloadPage(HttpListenerRequest request, string pageName)
+        private static string DownloadPage(HttpListenerRequest request, string pageName)
         {
             string html = GetHtml(pageName);
             string downloadInfo = GetPostBody(request);
@@ -493,8 +493,8 @@ namespace HTFanControl
                 string[] filename = HttpUtility.UrlDecode(values[0]).Split('=');
                 string[] url = HttpUtility.UrlDecode(values[1]).Split('=');
 
-                WebClient wc = new WebClient();
-                string windCodes = wc.DownloadString(url[1]);
+                HttpClient httpClient = new HttpClient();
+                string windCodes = httpClient.GetStringAsync(url[1]).Result;
 
                 html = html.Replace("{filename}", filename[1]);
                 html = html.Replace("{url}", url[1]);
@@ -558,11 +558,11 @@ namespace HTFanControl
             {
                 int filenameStart = fileInfo.IndexOf("filename=") + 10;
                 int filenameEnd = fileInfo.IndexOf('"', filenameStart);
-                string filename = fileInfo.Substring(filenameStart, filenameEnd - filenameStart);
+                string filename = fileInfo[filenameStart..filenameEnd];
 
                 int filedataStart = fileInfo.IndexOf("text/plain") + 14;
                 int filedataEnd = fileInfo.IndexOf("------", filedataStart) - 4;
-                string filedata = fileInfo.Substring(filedataStart, filedataEnd - filedataStart);
+                string filedata = fileInfo[filedataStart..filedataEnd];
 
                 File.WriteAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, filename), filedata);
             }
@@ -606,8 +606,8 @@ namespace HTFanControl
             if (!string.IsNullOrEmpty(saveInfo))
             {
                 string[] values = saveInfo.Split('=');
-                WebClient wc = new WebClient();
-                string windCodes = wc.DownloadString(values[0]);
+                HttpClient httpClient = new HttpClient();
+                string windCodes = httpClient.GetStringAsync(values[0]).Result;
 
                 string fileName = values[1];
                 if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
@@ -630,13 +630,11 @@ namespace HTFanControl
             StringBuilder sb = new StringBuilder();
             try
             {
-                string plexRequestURL = $"http://{_HTFanCtrl._mediaPlayerIP}:{_HTFanCtrl._mediaPlayerPort}/clients?X-Plex-Token={_HTFanCtrl._PlexToken}";
-                WebRequest webRequest = WebRequest.Create(plexRequestURL);
-                webRequest.Method = "GET";
-                webRequest.Timeout = 10000;
-                webRequest.ContentType = "application/xml";
+                HttpClient httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(10);
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
 
-                using Stream s = webRequest.GetResponse().GetResponseStream();
+                using Stream s = httpClient.GetAsync($"http://{_HTFanCtrl._mediaPlayerIP}:{_HTFanCtrl._mediaPlayerPort}/clients?X-Plex-Token={_HTFanCtrl._PlexToken}").Result.Content.ReadAsStreamAsync().Result;
                 XDocument plexml = XDocument.Load(s);
                 IEnumerable<XElement> plexPlayers = plexml.Descendants("MediaContainer").Descendants("Server");
 
@@ -731,23 +729,19 @@ namespace HTFanControl
             _HTFanCtrl.SendToLIRC(cmd);
         }
 
-        private string GetPostBody(HttpListenerRequest request)
+        private static string GetPostBody(HttpListenerRequest request)
         {
             string postData = null;
             if (request.HasEntityBody)
             {
-                using (Stream body = request.InputStream)
-                {
-                    using (StreamReader reader = new StreamReader(body, request.ContentEncoding))
-                    {
-                        postData = reader.ReadToEnd();
-                    }
-                }
+                using Stream body = request.InputStream;
+                using StreamReader reader = new StreamReader(body, request.ContentEncoding);
+                postData = reader.ReadToEnd();
             }
             return postData;
         }
 
-        private string GetHtml(string fileName)
+        private static string GetHtml(string fileName)
         {
             string html = "";
             try
@@ -755,11 +749,9 @@ namespace HTFanControl
                 Assembly assembly = Assembly.GetExecutingAssembly();
                 string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith(fileName + ".html"));
 
-                using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    html = reader.ReadToEnd();
-                }
+                using Stream stream = assembly.GetManifestResourceStream(resourceName);
+                using StreamReader reader = new StreamReader(stream);
+                html = reader.ReadToEnd();
             }
             catch { }
 

@@ -10,22 +10,22 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
 		ReleaseLinux|Any CPU = ReleaseLinux|Any CPU
+		ReleaseWin|Any CPU = ReleaseWin|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{0CD5C424-C125-4389-9151-6805035B38CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0CD5C424-C125-4389-9151-6805035B38CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0CD5C424-C125-4389-9151-6805035B38CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0CD5C424-C125-4389-9151-6805035B38CD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0CD5C424-C125-4389-9151-6805035B38CD}.ReleaseLinux|Any CPU.ActiveCfg = ReleaseLinux|Any CPU
 		{0CD5C424-C125-4389-9151-6805035B38CD}.ReleaseLinux|Any CPU.Build.0 = ReleaseLinux|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.ReleaseWin|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CD5C424-C125-4389-9151-6805035B38CD}.ReleaseWin|Any CPU.Build.0 = Debug|Any CPU
 		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.ReleaseLinux|Any CPU.ActiveCfg = Release|Any CPU
 		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.ReleaseLinux|Any CPU.Build.0 = Release|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.ReleaseWin|Any CPU.ActiveCfg = Release|Any CPU
+		{3754A290-418A-41C5-9DA2-7CDFFE8B8B64}.ReleaseWin|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

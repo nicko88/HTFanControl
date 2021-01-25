@@ -1,6 +1,7 @@
 ﻿using HTFanControl.Players;
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Web;
 
@@ -8,8 +9,11 @@ namespace HTFanControl
 {
     class KodiPlayer : IPlayer
     {
+        private HttpClient _httpClient;
+
         private string _IP;
         private string _port;
+        private bool _externalMPC;
 
         public bool IsPlaying { get; private set; }
         public long VideoTime { get; private set; }
@@ -18,31 +22,23 @@ namespace HTFanControl
         public string ErrorStatus { get; private set; }
         public int VideoTimeResolution { get; private set; }
 
-        public KodiPlayer(string IP, string port)
+        public KodiPlayer(string IP, string port, bool externalMPC)
         {
             VideoTimeResolution = 50;
             _IP = IP;
             _port = port;
+            _externalMPC = externalMPC;
+
+            _httpClient = new HttpClient();
+            _httpClient.Timeout = TimeSpan.FromSeconds(1);
         }
 
         public bool Update()
         {
             try
             {
-                string timeJSONRequest = @"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetProperties"", ""params"": {""properties"": [""time"", ""speed""], ""playerid"": 1}, ""id"": 1}";
-                string filenameJSONRequest = @"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }";
-
-                using WebClientWithTimeout webClient = new WebClientWithTimeout();
-                string timeJSONResponse = webClient.UploadString($"http://{_IP}:{_port}/jsonrpc", timeJSONRequest);
-                string filenameJSONResponse = webClient.UploadString($"http://{_IP}:{_port}/jsonrpc", "POST", filenameJSONRequest);
-                
-                using JsonDocument time = JsonDocument.Parse(timeJSONResponse);
-                long hours = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("hours").GetInt64();
-                long minutes = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("minutes").GetInt64();
-                long seconds = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("seconds").GetInt64();
-                long milliseconds = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("milliseconds").GetInt64();
-
-                VideoTime = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds;
+                StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }", System.Text.Encoding.UTF8, "application/json");
+                string filenameJSONResponse = _httpClient.PostAsync($"http://{_IP}:{_port}/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
 
                 using JsonDocument fileInfoJSON = JsonDocument.Parse(filenameJSONResponse);
                 string filePath = fileInfoJSON.RootElement.GetProperty("result").GetProperty("item").GetProperty("file").GetString();
@@ -51,16 +47,57 @@ namespace HTFanControl
                 FileName = fileInfo.Item1;
                 FilePath = fileInfo.Item2;
 
-                using JsonDocument state = JsonDocument.Parse(timeJSONResponse);
-                int stateNum = state.RootElement.GetProperty("result").GetProperty("speed").GetInt32();
+                bool getKodiTime = true;
 
-                if (stateNum == 1)
+                if (_externalMPC)
                 {
-                    IsPlaying = true;
+                    try
+                    {
+                        string html = _httpClient.GetStringAsync($"http://{_IP}:13579/variables.html").Result;
+
+                        HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+                        doc.LoadHtml(html);
+
+                        VideoTime = Int64.Parse(doc.GetElementbyId("position").InnerText);
+
+                        if (doc.GetElementbyId("statestring").InnerText == "Playing")
+                        {
+                            IsPlaying = true;
+                        }
+                        else
+                        {
+                            IsPlaying = false;
+                        }
+
+                        getKodiTime = false;
+                    }
+                    catch { }
                 }
-                else
+
+                if (getKodiTime)
                 {
-                    IsPlaying = false;
+                    StringContent timeJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetProperties"", ""params"": {""properties"": [""time"", ""speed""], ""playerid"": 1}, ""id"": 1}", System.Text.Encoding.UTF8, "application/json");
+                    string timeJSONResponse = _httpClient.PostAsync($"http://{_IP}:{_port}/jsonrpc", timeJSONRequest).Result.Content.ReadAsStringAsync().Result;
+
+                    using JsonDocument time = JsonDocument.Parse(timeJSONResponse);
+                    long hours = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("hours").GetInt64();
+                    long minutes = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("minutes").GetInt64();
+                    long seconds = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("seconds").GetInt64();
+                    long milliseconds = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("milliseconds").GetInt64();
+
+                    VideoTime = (hours * 3600000) + (minutes * 60000) + (seconds * 1000) + milliseconds + 200;
+
+                    using JsonDocument state = JsonDocument.Parse(timeJSONResponse);
+                    int stateNum = state.RootElement.GetProperty("result").GetProperty("speed").GetInt32();
+
+                    if (stateNum == 1)
+                    {
+                        IsPlaying = true;
+                    }
+                    else
+                    {
+                        IsPlaying = false;
+                    }
                 }
             }
             catch
@@ -73,7 +110,7 @@ namespace HTFanControl
         }
 
 
-        private (string, string) ParseKodiFile(string filePathName)
+        private static (string, string) ParseKodiFile(string filePathName)
         {
             string fileName;
             string decodedInput = HttpUtility.UrlDecode(HttpUtility.UrlDecode(filePathName));
@@ -90,7 +127,7 @@ namespace HTFanControl
                     end = revInput.IndexOf(@"/", start);
                 }
 
-                string revFilename = revInput.Substring(start, end - start);
+                string revFilename = revInput[start..end];
 
                 fileName = Reverse(revFilename);
             }
@@ -119,7 +156,7 @@ namespace HTFanControl
             return (fileName, filePath);
         }
 
-        private string Reverse(string s)
+        private static string Reverse(string s)
         {
             char[] charArray = s.ToCharArray();
             Array.Reverse(charArray);

@@ -1,6 +1,7 @@
 ﻿using HTFanControl.Players;
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Web;
 
@@ -8,6 +9,8 @@ namespace HTFanControl
 {
     class MPCPlayer : IPlayer
     {
+        private HttpClient _httpClient;
+
         private string _IP;
         private string _port;
 
@@ -23,22 +26,24 @@ namespace HTFanControl
             VideoTimeResolution = 50;
             _IP = IP;
             _port = port;
+
+            _httpClient = new HttpClient();
+            _httpClient.Timeout = TimeSpan.FromSeconds(1);
         }
 
         public bool Update()
         {
             try
             {
-                using WebClientWithTimeout client = new WebClientWithTimeout();
-                string html = client.DownloadString($"http://{_IP}:{_port}/variables.html");
+                string html = _httpClient.GetStringAsync($"http://{_IP}:{_port}/variables.html").Result;
 
                 HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
 
-                VideoTime = Int64.Parse(doc.GetElementbyId("position").InnerText);
-
                 FileName = Path.GetFileNameWithoutExtension(doc.GetElementbyId("file").InnerText);
                 FilePath = doc.GetElementbyId("filedir").InnerText;
+
+                VideoTime = Int64.Parse(doc.GetElementbyId("position").InnerText);
 
                 //Get file from Kodi if MPC looks like it is a mounted ISO.
                 if (FilePath.Contains(@"\BDMV"))
@@ -66,10 +71,12 @@ namespace HTFanControl
 
         private void GetFileFromKodi()
         {
-            string filenameJSONRequest = @"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }";
+            StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }", System.Text.Encoding.UTF8, "application/json");
 
-            using WebClientWithTimeout webClient = new WebClientWithTimeout();
-            string filenameJSONResponse = webClient.UploadString($"http://{_IP}:8080/jsonrpc", "POST", filenameJSONRequest);
+            HttpClient httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(1);
+
+            string filenameJSONResponse = httpClient.PostAsync($"http://{_IP}:8080/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
             
             using JsonDocument fileInfoJSON = JsonDocument.Parse(filenameJSONResponse);
             string kodiFile = fileInfoJSON.RootElement.GetProperty("result").GetProperty("item").GetProperty("file").GetString();
@@ -80,7 +87,7 @@ namespace HTFanControl
             FilePath = fileInfo.Item2;
         }
 
-        private (string, string) ParseKodiFile(string filePathName)
+        private static (string, string) ParseKodiFile(string filePathName)
         {
             string fileName;
             string decodedInput = HttpUtility.UrlDecode(HttpUtility.UrlDecode(filePathName));
@@ -97,7 +104,7 @@ namespace HTFanControl
                     end = revInput.IndexOf(@"/", start);
                 }
 
-                string revFilename = revInput.Substring(start, end - start);
+                string revFilename = revInput[start..end];
 
                 fileName = Reverse(revFilename);
             }
@@ -126,7 +133,7 @@ namespace HTFanControl
             return (fileName, filePath);
         }
 
-        private string Reverse(string s)
+        private static string Reverse(string s)
         {
             char[] charArray = s.ToCharArray();
             Array.Reverse(charArray);

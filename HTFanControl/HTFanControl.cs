@@ -170,21 +170,23 @@ namespace HTFanControl
         {
             try
             {
-                List<string> settings = new List<string>();
-                settings.Add("MediaPlayer=" + _mediaPlayerType);
-                settings.Add("MediaPlayerIP=" + _mediaPlayerIP);
-                settings.Add("MediaPlayerPort=" + _mediaPlayerPort);
-                settings.Add("LircIP=" + _lircIP);
-                settings.Add("LircPort=" + _lircPort);
-                settings.Add("LircRemote=" + _lircRemote);
-                settings.Add("PlexToken=" + _PlexToken);
-                settings.Add("PlexClientName=" + _plexClientName);
-                settings.Add("PlexClientIP=" + _plexClientIP);
-                settings.Add("PlexClientPort=" + _plexClientPort);
-                settings.Add("PlexClientGUID=" + _plexClientGUID);
-                settings.Add("GlobalOffsetMS=" + _globalOffsetMS);
-                settings.Add("SpinupOffsetMS=" + _spinupOffsetMS);
-                settings.Add("SpindownOffsetMS=" + _spindownOffsetMS);
+                List<string> settings = new List<string>
+                {
+                    "MediaPlayer=" + _mediaPlayerType,
+                    "MediaPlayerIP=" + _mediaPlayerIP,
+                    "MediaPlayerPort=" + _mediaPlayerPort,
+                    "LircIP=" + _lircIP,
+                    "LircPort=" + _lircPort,
+                    "LircRemote=" + _lircRemote,
+                    "PlexToken=" + _PlexToken,
+                    "PlexClientName=" + _plexClientName,
+                    "PlexClientIP=" + _plexClientIP,
+                    "PlexClientPort=" + _plexClientPort,
+                    "PlexClientGUID=" + _plexClientGUID,
+                    "GlobalOffsetMS=" + _globalOffsetMS,
+                    "SpinupOffsetMS=" + _spinupOffsetMS,
+                    "SpindownOffsetMS=" + _spindownOffsetMS
+                };
 
                 if (ConfigHelper.GetOS() != "win")
                 {
@@ -204,21 +206,14 @@ namespace HTFanControl
 
         private void SelectMediaPlayer()
         {
-            switch (_mediaPlayerType)
+            _mediaPlayer = _mediaPlayerType switch
             {
-                case "MPC":
-                    _mediaPlayer = new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort);
-                    break;
-                case "Kodi":
-                    _mediaPlayer = new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort);
-                    break;
-                case "Plex":
-                    _mediaPlayer = new PlexPlayer(_mediaPlayerIP, _mediaPlayerPort, _PlexToken, _plexClientIP, _plexClientPort, _plexClientGUID, _plexClientName);
-                    break;
-                default:
-                    _mediaPlayer = new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort);
-                    break;
-            }
+                "MPC" => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
+                "Kodi" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, false),
+                "KodiMPC" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, true),
+                "Plex" => new PlexPlayer(_mediaPlayerIP, _mediaPlayerPort, _PlexToken, _plexClientIP, _plexClientPort, _plexClientGUID, _plexClientName),
+                _ => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
+            };
         }
 
         public void ToggleFan()
@@ -237,7 +232,6 @@ namespace HTFanControl
                 Console.WriteLine("Fans Enabled");
 
                 _isEnabled = true;
-                byte[] cmd = new byte[0];
 
                 if (_videoTimer != null)
                 {
@@ -245,7 +239,7 @@ namespace HTFanControl
                     {
                         if (_isPlaying)
                         {
-                            cmd = Encoding.ASCII.GetBytes($"SEND_ONCE {_lircRemote} {_videoTimeCodes[_curCmdIndex].Item2}\n");
+                            byte[] cmd = Encoding.ASCII.GetBytes($"SEND_ONCE {_lircRemote} {_videoTimeCodes[_curCmdIndex].Item2}\n");
                             Console.WriteLine($"Sent CMD: {_videoTimeCodes[_curCmdIndex].Item1.ToString("G").Substring(2, 12)},{_videoTimeCodes[_curCmdIndex].Item2}");
 
                             SendToLIRC(cmd);
@@ -495,8 +489,6 @@ namespace HTFanControl
                 string lastCmd = "OFF";
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
-                bool isFanCmd = false;
-
                 double globalOffsetMS = Convert.ToDouble(_globalOffsetMS);
                 double spinupOffsetMS = Convert.ToDouble(_spinupOffsetMS);
                 double spindownOffsetMS = Convert.ToDouble(_spindownOffsetMS);
@@ -527,7 +519,7 @@ namespace HTFanControl
                         string[] lineData = line.Split(',');
 
                         // check if this timecode contains a fan command so we can apply offsets
-                        isFanCmd = false;
+                        bool isFanCmd = false;
                         for (int j = 1; j < lineData.Length; j++)
                         {
                             if (lineData[j].Equals("OFF") || lineData[j].Equals("ECO") || lineData[j].Equals("LOW") || lineData[j].Equals("MED") || lineData[j].Equals("HIGH"))

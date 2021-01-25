@@ -2,9 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows7.0</TargetFramework>
 	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
-	<Configurations>Debug;Release;ReleaseLinux</Configurations>
+	<Configurations>Debug;ReleaseWin;ReleaseLinux</Configurations>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLinux|AnyCPU'">
@@ -12,7 +13,7 @@
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
 
@@ -61,11 +62,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.24" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.30" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 	<ProjectReference Include="..\FanTrayIcon\FanTrayIcon.csproj" />
   </ItemGroup>
 
