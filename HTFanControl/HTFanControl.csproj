@@ -32,6 +32,7 @@
   <ItemGroup>
     <None Remove="html\50-cloud-init.yaml" />
     <None Remove="html\add.html" />
+    <None Remove="html\checkupdate.html" />
     <None Remove="html\download.html" />
     <None Remove="html\downloadlist.html" />
     <None Remove="html\edit.html" />
@@ -47,6 +48,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="html\50-cloud-init.yaml" />
+    <EmbeddedResource Include="html\checkupdate.html" />
     <EmbeddedResource Include="html\loadedwindtrack.html" />
     <EmbeddedResource Include="html\selectplexplayer.html" />
     <EmbeddedResource Include="html\download.html" />

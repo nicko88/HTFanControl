@@ -31,7 +31,7 @@ namespace HTFanControl
             }
             else if(OS.Contains("raspi"))
             {
-                OS = "pi";
+                OS = "raspi";
             }
             else if (OS.Contains("Linux"))
             {

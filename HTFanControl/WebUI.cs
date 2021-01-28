@@ -17,7 +17,7 @@ namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta 18";
+        private readonly string _version = "Beta19";
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
@@ -139,6 +139,13 @@ namespace HTFanControl
                         break;
                     case "/clearerror":
                         _HTFanCtrl._errorStatus = null;
+                        break;
+                    case "/checkupdate":
+                        htmlResponse = CheckUpdatePage(request, "checkupdate");
+                        break;
+                    case "/raspiupdate":
+                        ($"nohup {Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "updater.sh")} &>/dev/null &").Bash();
+                        Environment.Exit(0);
                         break;
                     case "/shutdown":
                         Environment.Exit(0);
@@ -364,7 +371,7 @@ namespace HTFanControl
                 }
             }
 
-            html = html.Replace("{version}", $"Version: {_version}");
+            html = html.Replace("{version}", @$"Version: {_version} <a href=""checkupdate"">(Check For Update)</a>");
 
             return html;
         }
@@ -452,6 +459,50 @@ namespace HTFanControl
                 ($"echo \"{netplan}\" > /etc/netplan/50-cloud-init.yaml").Bash();
                 "netplan apply".Bash();
             }
+        }
+
+        private string CheckUpdatePage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+
+            StringBuilder sb = new StringBuilder();
+            try
+            {
+                sb.AppendLine("</br>");
+                sb.AppendLine($"<b>Current Version:</b> {_version}");
+                sb.AppendLine("</br>");
+
+                HttpClient httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", ".netapp");
+                string releaseJSON = httpClient.GetAsync("https://api.github.com/repos/nicko88/htfancontrol/releases/latest").Result.Content.ReadAsStringAsync().Result;
+                using JsonDocument data = JsonDocument.Parse(releaseJSON);
+                string latest = data.RootElement.GetProperty("tag_name").GetString();
+                string latesturl = data.RootElement.GetProperty("html_url").GetString();
+
+                sb.AppendLine($"<b>Latest Version:</b> {latest}");
+                sb.AppendLine("</br></br>");
+
+                if (_version != latest)
+                {
+                    if (ConfigHelper.GetOS() == "raspi")
+                    {
+                        sb.AppendLine(@"<button id=""btnupdate"" onclick=""raspiupdate();"" class=""btn btn-primary"">Update HTFanControl</button>");
+                    }
+                    else
+                    {
+                        sb.AppendLine(@$"<a href=""{latesturl}""><b>Get Latest Version Here</b></a>");
+                    }
+                }
+                else
+                {
+                    sb.AppendLine(@$"<b>You Have The Latest Version</b>");
+                }
+
+                html = html.Replace("{body}", sb.ToString());
+            }
+            catch { }
+
+            return html;
         }
 
         private static string DownloadListPage(HttpListenerRequest request, string pageName)
