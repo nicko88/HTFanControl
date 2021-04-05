@@ -74,7 +74,7 @@ namespace HTFanControl
             _syncTimer = new Timer(SyncTimerTick, null, 0, Timeout.Infinite);
         }
 
-        public void ReInitialize()
+        public void ReInitialize(bool fullRefresh)
         {
             _videoTimer?.Stop();
             _currentVideoFileName = "";
@@ -85,8 +85,13 @@ namespace HTFanControl
             _nextCmdIndex = 0;
             _isPlaying = false;
 
-            LoadLIRCMapping();
             SelectMediaPlayer();
+
+            if(fullRefresh)
+            {
+                LoadLIRCMapping();
+                SetTransmitters();
+            }
         }
 
         private void LoadSettings()
@@ -197,6 +202,8 @@ namespace HTFanControl
                 }
 
                 File.WriteAllLines(_settingsPath, settings);
+
+                SetTransmitters();
             }
             catch (Exception e)
             {
@@ -320,7 +327,7 @@ namespace HTFanControl
                 else
                 {
                     _errorStatus = _mediaPlayer.ErrorStatus;
-                    ReInitialize();
+                    ReInitialize(false);
                 }
             }
 

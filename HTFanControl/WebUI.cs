@@ -116,16 +116,17 @@ namespace HTFanControl
                         SavePlexPlayer(request, "saveplexplayer");
                         break;
                     case "/reload":
-                        _HTFanCtrl.ReInitialize();
+                        _HTFanCtrl.ReInitialize(true);
                         break;
                     case "/togglefan":
                         _HTFanCtrl.ToggleFan();
                         break;
                     case "/toggleoffset":
                         _HTFanCtrl._offsetEnabled = !_HTFanCtrl._offsetEnabled;
-                        _HTFanCtrl.ReInitialize();
+                        _HTFanCtrl.ReInitialize(true);
                         break;
                     case "/fantester":
+                        _HTFanCtrl.ReInitialize(true);
                         htmlResponse = GetHtml("fantester");
                         break;
                     case "/loadedwindtrack":
@@ -404,7 +405,7 @@ namespace HTFanControl
                 }
 
                 _HTFanCtrl.SaveSettings();
-                _HTFanCtrl.ReInitialize();
+                _HTFanCtrl.ReInitialize(true);
             }
         }
 
@@ -631,7 +632,7 @@ namespace HTFanControl
                     File.Move(Path.Combine(_HTFanCtrl._videoTimecodePath, renameInfo), Path.Combine(_HTFanCtrl._videoTimecodePath, _HTFanCtrl._currentVideoFileName + ".txt"), true);
                 }
                 catch { }
-                _HTFanCtrl.ReInitialize();
+                _HTFanCtrl.ReInitialize(true);
             }
         }
 
@@ -646,7 +647,7 @@ namespace HTFanControl
                     File.Delete(Path.Combine(_HTFanCtrl._videoTimecodePath, deleteInfo));
                 }
                 catch { }
-                _HTFanCtrl.ReInitialize();
+                _HTFanCtrl.ReInitialize(true);
             }
         }
 
@@ -672,7 +673,7 @@ namespace HTFanControl
                 }
                 catch { }
 
-                _HTFanCtrl.ReInitialize();
+                _HTFanCtrl.ReInitialize(true);
             }
         }
 
@@ -711,7 +712,7 @@ namespace HTFanControl
             _HTFanCtrl._plexClientGUID = data.RootElement.GetProperty("guid").GetString();
 
             _HTFanCtrl.SaveSettings();
-            _HTFanCtrl.ReInitialize();
+            _HTFanCtrl.ReInitialize(true);
         }
 
         private string LoadedWindTrackData(HttpListenerRequest request, string pageName)
