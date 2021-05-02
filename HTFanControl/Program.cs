@@ -28,6 +28,11 @@ namespace HTFanControl
                 Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks"));
             }
 
+            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "fingerprints")))
+            {
+                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "fingerprints"));
+            }
+
             Console.WriteLine("http://" + ConfigHelper.GetIP() + ":5500");
 
             _ = new WebUI();

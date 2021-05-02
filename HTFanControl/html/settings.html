@@ -55,35 +55,61 @@
 		{
 			Save();
             window.location.href = "selectplexplayer";
+		}
+
+		function SelectAudioDevice()
+		{
+            Save();
+            window.location.href = "selectaudiodevice";
         }
 
 		function mpc()
 		{
 			document.getElementById('MediaPlayerPort').value = '13579';
 			document.getElementById("lblPlayer").innerHTML = "MPC-HC/BE IP";
+            document.getElementById('mediaPlayerDiv').style.display = 'block';
 			document.getElementById('plexDiv').style.display = 'none';
+            document.getElementById('audioDiv').style.display = 'none';
 		}
 		function kodi()
 		{
 			document.getElementById('MediaPlayerPort').value = '8080';
-            document.getElementById("lblPlayer").innerHTML = "Kodi IP";
-            document.getElementById('plexDiv').style.display = 'none';
+			document.getElementById("lblPlayer").innerHTML = "Kodi IP";
+            document.getElementById('mediaPlayerDiv').style.display = 'block';
+			document.getElementById('plexDiv').style.display = 'none';
+            document.getElementById('audioDiv').style.display = 'none';
 		}
 		function plex()
 		{
 			document.getElementById('MediaPlayerPort').value = '32400';
-            document.getElementById("lblPlayer").innerHTML = "Plex Media Server IP";
-            document.getElementById('plexDiv').style.display = 'block';
+			document.getElementById("lblPlayer").innerHTML = "Plex Media Server IP";
+            document.getElementById('mediaPlayerDiv').style.display = 'block';
+			document.getElementById('plexDiv').style.display = 'block';
+            document.getElementById('audioDiv').style.display = 'none';
 		}
 
-		function showplex()
+		function audio()
+		{
+            document.getElementById('audioDiv').style.display = 'block';
+            document.getElementById('mediaPlayerDiv').style.display = 'none';
+            document.getElementById('plexDiv').style.display = 'none';
+		}
+
+		function showforms()
 		{
 			if (document.getElementById('Plex').checked)
 			{
-				document.getElementById('plexDiv').style.display = 'block';
+                document.getElementById('plexDiv').style.display = 'block';
 			}
-		}
-        window.addEventListener('DOMContentLoaded', showplex, false);
+
+			if (document.getElementById('Audio').checked)
+			{
+				document.getElementById('audioDiv').style.display = 'block';
+                document.getElementById('mediaPlayerDiv').style.display = 'none';
+            }
+        }
+
+		window.addEventListener('DOMContentLoaded', showforms, false);
 	</script>
 	<style>
 		* {
@@ -172,12 +198,18 @@
 				<input class="form-check-input" type="radio" name="MediaPlayer" id="Plex" value="Plex" onclick="plex()" {Plex}>
 				<label class="form-check-label" for="Plex">Plex</label>
 			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Audio" value="Audio" onclick="audio()" {Audio}>
+				<label class="form-check-label" for="Audio">Audio Sync</label>
+			</div>
 		</div>
 	</div>
 
-	<div class="nrow">
-		<div class="nitem" style="flex-grow: 2;"><b id="lblPlayer">{lblPlayer}</b><input type="text" class="form-control" id="MediaPlayerIP" value="{MediaPlayerIP}"></div>
-		<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="MediaPlayerPort" value="{MediaPlayerPort}"></div>
+	<div id="mediaPlayerDiv">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b id="lblPlayer">{lblPlayer}</b><input type="text" class="form-control" id="MediaPlayerIP" value="{MediaPlayerIP}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="MediaPlayerPort" value="{MediaPlayerPort}"></div>
+		</div>
 	</div>
 
 	<div id="plexDiv" style="display: none; padding-bottom: 5px;">
@@ -190,6 +222,12 @@
 		<b>Selected Plex Player:</b> {PlexPlayer}
 		<br />
 		<button onclick="SelectPlexPlayer()" class="btn btn-primary">Select Plex Player</button>
+	</div>
+
+	<div id="audioDiv" style="display: none; padding-bottom: 5px">
+		<b>Selected Audio Input Device:</b> {AudioDevice}
+		<br />
+		<button onclick="SelectAudioDevice()" class="btn btn-primary">Select Audio Device</button>
 	</div>
 
 	<div class="nrow">

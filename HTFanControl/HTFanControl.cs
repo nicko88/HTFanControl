@@ -27,19 +27,18 @@ namespace HTFanControl
         public double _offset = 0;
         public bool _offsetEnabled = false;
 
-        public readonly string _videoTimecodePath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks");
-        public List<Tuple<TimeSpan, string>> _videoTimeCodes;
+        public readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        private readonly string _lircMappingPath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "lircmapping.txt");
+        public List<Tuple<TimeSpan, string>> _videoTimeCodes;
         private Dictionary<string, string> _lircMapping;
 
-        private readonly string _settingsPath = Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "HTFanControlSettings.txt");
         public string _mediaPlayerType = "MPC";
         public string _mediaPlayerIP = "127.0.0.1";
         public string _mediaPlayerPort = "13579";
         public string _lircIP = "127.0.0.1";
         public string _lircPort = "8765";
         public string _lircRemote = "EHF10127B";
+        public string _audioDevice;
         public string _PlexToken;
         public string _plexClientName;
         public string _plexClientIP;
@@ -57,6 +56,8 @@ namespace HTFanControl
         private readonly Timer _syncTimer;
         private IPlayer _mediaPlayer;
 
+        public AudioSync _audioSync;
+
         private Socket _lircSocket;
 
         public HTFanControl()
@@ -66,12 +67,11 @@ namespace HTFanControl
 
             LoadLIRCMapping();
 
-            SelectMediaPlayer();
+            _syncTimer = new Timer(SyncTimerTick, null, Timeout.Infinite, Timeout.Infinite);
+            SelectSyncSource();
 
             ConnectToLIRC();
             SetTransmitters();
-
-            _syncTimer = new Timer(SyncTimerTick, null, 0, Timeout.Infinite);
         }
 
         public void ReInitialize(bool fullRefresh)
@@ -85,7 +85,12 @@ namespace HTFanControl
             _nextCmdIndex = 0;
             _isPlaying = false;
 
-            SelectMediaPlayer();
+            if (_mediaPlayerType == "Audio")
+            {
+                _audioSync?.Stop();
+            }
+
+            SelectSyncSource();
 
             if(fullRefresh)
             {
@@ -98,7 +103,7 @@ namespace HTFanControl
         {
             try
             {
-                string[] settingsFile = File.ReadAllLines(_settingsPath);
+                string[] settingsFile = File.ReadAllLines(Path.Combine(_rootPath, "HTFanControlSettings.txt"));
                 Dictionary<string, string> settings = settingsFile.ToDictionary(x => x.Split('=')[0], x => x.Split('=')[1]);
 
                 if(!settings.TryGetValue("MediaPlayer", out _mediaPlayerType))
@@ -125,6 +130,8 @@ namespace HTFanControl
                 {
                     _lircRemote = "EHF10127B";
                 }
+
+                settings.TryGetValue("AudioDevice", out _audioDevice);
 
                 settings.TryGetValue("PlexToken", out _PlexToken);
                 settings.TryGetValue("PlexClientName", out _plexClientName);
@@ -183,6 +190,7 @@ namespace HTFanControl
                     "LircIP=" + _lircIP,
                     "LircPort=" + _lircPort,
                     "LircRemote=" + _lircRemote,
+                    "AudioDevice=" + _audioDevice,
                     "PlexToken=" + _PlexToken,
                     "PlexClientName=" + _plexClientName,
                     "PlexClientIP=" + _plexClientIP,
@@ -201,7 +209,7 @@ namespace HTFanControl
                     settings.Add("IRChan4=" + _irChan4);
                 }
 
-                File.WriteAllLines(_settingsPath, settings);
+                File.WriteAllLines(Path.Combine(_rootPath, "HTFanControlSettings.txt"), settings);
 
                 SetTransmitters();
             }
@@ -211,16 +219,51 @@ namespace HTFanControl
             }
         }
 
-        private void SelectMediaPlayer()
+        private void SelectSyncSource()
         {
-            _mediaPlayer = _mediaPlayerType switch
+            if (_mediaPlayerType == "Audio")
             {
-                "MPC" => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
-                "Kodi" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, false),
-                "KodiMPC" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, true),
-                "Plex" => new PlexPlayer(_mediaPlayerIP, _mediaPlayerPort, _PlexToken, _plexClientIP, _plexClientPort, _plexClientGUID, _plexClientName),
-                _ => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
-            };
+                _audioSync = new AudioSync(this);
+                _syncTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+            else
+            {
+                _mediaPlayer = _mediaPlayerType switch
+                {
+                    "MPC" => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
+                    "Kodi" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, false),
+                    "KodiMPC" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, true),
+                    "Plex" => new PlexPlayer(_mediaPlayerIP, _mediaPlayerPort, _PlexToken, _plexClientIP, _plexClientPort, _plexClientGUID, _plexClientName),
+                    _ => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
+                };
+
+                _syncTimer.Change(1000, Timeout.Infinite);
+            }
+        }
+
+        public async void SelectVideo(string fileName)
+        {
+            _audioSync.Start(fileName);
+            _currentVideoFileName = fileName;
+            LoadVideoTimecodes(fileName, "");
+
+            if (_videoTimer != null)
+            {
+                await _videoTimer.DisposeAsync(_videoTimeCodes == null);
+            }
+            if (_videoTimeCodes != null)
+            {
+                _videoTimer = new PositionTimer<(string, int)>(_videoTimeCodes.Select((v, i) => (v.Item1, (v.Item2, i))), SendCmd, 1000, ("OFF", -1));
+            }
+            else
+            {
+                _videoTimer = null;
+            }
+        }
+
+        public void UpdateTime()
+        {
+            _videoTimer.Update(TimeSpan.FromMilliseconds(_currentVideoTime));
         }
 
         public void ToggleFan()
@@ -260,10 +303,10 @@ namespace HTFanControl
         private void LoadLIRCMapping()
         {
             _lircMapping = null;
-            if (File.Exists(_lircMappingPath))
+            if (File.Exists(Path.Combine(_rootPath, "lircmapping.txt")))
             {
                 _lircMapping = new Dictionary<string, string>();
-                string[] mappingFile = File.ReadAllLines(_lircMappingPath);
+                string[] mappingFile = File.ReadAllLines(Path.Combine(_rootPath, "lircmapping.txt"));
 
                 foreach(string s in mappingFile)
                 {
@@ -331,7 +374,10 @@ namespace HTFanControl
                 }
             }
 
-            _syncTimer.Change(1000, Timeout.Infinite);
+            if (_mediaPlayerType != "Audio")
+            {
+                _syncTimer.Change(1000, Timeout.Infinite);
+            }
         }
 
         private void SendCmd(PositionTimer videoTimer, (string cmd, int index) command)
@@ -463,9 +509,9 @@ namespace HTFanControl
             //look for wind track in windtrack folder
             try
             {
-                if (File.Exists(Path.Combine(_videoTimecodePath, fileName + ".txt")))
+                if (File.Exists(Path.Combine(Path.Combine(_rootPath, "windtracks"), fileName + ".txt")))
                 {
-                    validFileName = Path.Combine(_videoTimecodePath, fileName + ".txt");
+                    validFileName = Path.Combine(Path.Combine(_rootPath, "windtracks"), fileName + ".txt");
                 }
             }
             catch { }

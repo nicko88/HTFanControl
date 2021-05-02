@@ -2,7 +2,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<title>Manage Wind Tracks</title>
+	<title>Select Video</title>
 	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,20 +17,27 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 	<script>
-		function editfile(filename)
+		function selectfile(filename)
 		{
-			document.getElementById('filename').value = filename;
-            document.getElementById('editform').submit();
+            fetch('select', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/text',
+                },
+                body: filename
+            });
+
+            window.location.href = "/";
 		}
 		async function load_movie()
 		{
-            const response = await fetch("currentmovie")
-            const html = await response.text();
-            document.getElementById("currentmovie").innerHTML = html;
-        }
+			const response = await fetch("currentmovie")
+			const html = await response.text();
+			document.getElementById("currentmovie").innerHTML = html;
+		}
 
-        load_movie();
-        setInterval(load_movie, 1000);
+		load_movie();
+		setInterval(load_movie, 1000);
 	</script>
 	<style>
 		* {
@@ -42,12 +49,12 @@
 			background-color: black;
 		}
 
-        span {
-            padding-top: 4px;
-            padding-bottom: 4px;
-            padding-left: 8px;
-            padding-right: 8px;
-        }
+		span {
+			padding-top: 4px;
+			padding-bottom: 4px;
+			padding-left: 8px;
+			padding-right: 8px;
+		}
 
 		ul {
 			display: flex;
@@ -74,24 +81,17 @@
 				<a class="nav-link text-muted" href="/">Status</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link active bg-dark text-white" href="manage">Manage</a>
+				<a class="nav-link text-muted" href="settings">General</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link text-muted" href="downloadlist">Download</a>
-			</li>
-			<li class="nav-item">
-				<a class="nav-link text-muted" href="add">Add</a>
+				<a class="nav-link text-muted" href="fantester">Fan Tester</a>
 			</li>
 		</ul>
 
 		<div id="currentmovie"></div>
-		Click on a video below to view/edit wind track.
+		Click on a video below to select it.
 
 		{body}
-
-		<form method="post" id="editform" action="edit">
-			<input type="hidden" id="filename" name="filename" value="">
-		</form>
 
 	</div>
 </body>

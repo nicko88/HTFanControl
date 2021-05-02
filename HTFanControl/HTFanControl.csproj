@@ -40,7 +40,9 @@
     <None Remove="html\loadedwindtrack.html" />
     <None Remove="html\manage.html" />
     <None Remove="html\raspiwifi.html" />
+    <None Remove="html\selectaudiodevice.html" />
     <None Remove="html\selectplexplayer.html" />
+    <None Remove="html\selectvideo.html" />
     <None Remove="html\settings.html" />
     <None Remove="html\settingslinux.html" />
     <None Remove="html\status.html" />
@@ -50,6 +52,7 @@
     <EmbeddedResource Include="html\50-cloud-init.yaml" />
     <EmbeddedResource Include="html\checkupdate.html" />
     <EmbeddedResource Include="html\loadedwindtrack.html" />
+    <EmbeddedResource Include="html\selectaudiodevice.html" />
     <EmbeddedResource Include="html\selectplexplayer.html" />
     <EmbeddedResource Include="html\download.html" />
     <EmbeddedResource Include="html\add.html" />
@@ -59,13 +62,17 @@
     <EmbeddedResource Include="html\downloadlist.html" />
     <EmbeddedResource Include="html\raspiwifi.html" />
     <EmbeddedResource Include="html\settingslinux.html" />
+    <EmbeddedResource Include="html\selectvideo.html" />
     <EmbeddedResource Include="html\status.html" />
     <EmbeddedResource Include="html\settings.html" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.32" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.33" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+    <PackageReference Include="OpenTK.OpenAL" Version="4.6.3" />
+    <PackageReference Include="SoundFingerprinting" Version="7.9.4" />
+    <PackageReference Include="SoundFingerprinting.Emy" Version="7.9.4" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

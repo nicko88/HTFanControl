@@ -12,12 +12,13 @@ using System.Diagnostics;
 using System.Xml.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using OpenTK.Audio.OpenAL;
 
 namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta19";
+        private readonly string _version = "Beta20";
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
@@ -109,11 +110,21 @@ namespace HTFanControl
                         htmlResponse = GetHtml("selectplexplayer");
                         break;
                     case "/getplexplayers":
-                        htmlResponse = GetPlexPlayer(request, "getplexplayers");
+                        htmlResponse = GetPlexPlayers(request, "getplexplayers");
                         break;
                     case "/saveplexplayer":
                         _waitForFile = true;
                         SavePlexPlayer(request, "saveplexplayer");
+                        break;
+                    case "/selectaudiodevice":
+                        htmlResponse = GetHtml("selectaudiodevice");
+                        break;
+                    case "/getaudiodevices":
+                        htmlResponse = GetAudioDevices(request, "getaudiodevices");
+                        break;
+                    case "/saveaudiodevice":
+                        _waitForFile = true;
+                        SaveAudioDevice(request, "saveaudiodevice");
                         break;
                     case "/reload":
                         _HTFanCtrl.ReInitialize(true);
@@ -134,6 +145,12 @@ namespace HTFanControl
                         break;
                     case "/loadedwindtrackdata":
                         htmlResponse = LoadedWindTrackData(request, "loadedwindtrackdata");
+                        break;
+                    case "/selectvideo":
+                        htmlResponse = SelectVideoPage(request, "selectvideo");
+                        break;
+                    case "/select":
+                        _HTFanCtrl.SelectVideo(GetPostBody(request).Replace(".fingerprints", ""));
                         break;
                     case "/fancmd":
                         FanCmd(request, "fancmd");
@@ -182,6 +199,15 @@ namespace HTFanControl
                 html = html.Replace("{status}", "Fans Disabled");
             }
 
+            if(_HTFanCtrl._mediaPlayerType == "Audio")
+            {
+                html = html.Replace("{reloadbtn}", "Stop Audio Sync");
+            }
+            else
+            {
+                html = html.Replace("{reloadbtn}", "Reload Wind Track");
+            }
+
             html = html.Replace("{version}", _version);
 
             return html;
@@ -189,11 +215,23 @@ namespace HTFanControl
 
         private string GetStatusData(HttpListenerRequest request, string pageName)
         {
+            string timeMsg = "Current time: ";
+            if (_HTFanCtrl._mediaPlayerType == "Audio")
+            {
+                timeMsg = "Last time match: ";
+            }
+
             StringBuilder htmlData = new StringBuilder();
 
             if (_HTFanCtrl != null)
             {
                 htmlData.AppendLine(GetCurrentMovie(request, pageName));
+                if(_HTFanCtrl._mediaPlayerType == "Audio")
+                {
+                    htmlData.AppendLine("<br />");
+                    htmlData.AppendLine("<button onclick=\"window.location.href = 'selectvideo';\" class=\"btn btn-primary\">Select Video</button>");
+                    htmlData.AppendLine("<br />");
+                }
                 if (_HTFanCtrl._videoTimeCodes != null)
                 {
                     htmlData.AppendLine("<br /><br />");
@@ -219,7 +257,7 @@ namespace HTFanControl
                 }
 
                 htmlData.AppendLine("<br /><br />");
-                htmlData.Append("Current time: " + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
+                htmlData.Append(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
                 htmlData.AppendLine("<br /><br />");
 
                 if (_HTFanCtrl._videoTimeCodes != null)
@@ -301,6 +339,7 @@ namespace HTFanControl
                 html = html.Replace("{MPC}", "checked");
                 html = html.Replace("{Kodi}", "");
                 html = html.Replace("{Plex}", "");
+                html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "MPC-HC/BE IP");
             }
             else if (_HTFanCtrl._mediaPlayerType.Contains("Kodi"))
@@ -308,14 +347,23 @@ namespace HTFanControl
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "checked");
                 html = html.Replace("{Plex}", "");
+                html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "Kodi IP");
             }
-            else
+            else if (_HTFanCtrl._mediaPlayerType == "Plex")
             {
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "");
                 html = html.Replace("{Plex}", "checked");
+                html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "Plex Media Server IP");
+            }
+            else if (_HTFanCtrl._mediaPlayerType == "Audio")
+            {
+                html = html.Replace("{MPC}", "");
+                html = html.Replace("{Kodi}", "");
+                html = html.Replace("{Plex}", "");
+                html = html.Replace("{Audio}", "checked");
             }
 
             html = html.Replace("{MediaPlayerIP}", _HTFanCtrl._mediaPlayerIP);
@@ -330,6 +378,15 @@ namespace HTFanControl
             else
             {
                 html = html.Replace("{PlexPlayer}", $"{_HTFanCtrl._plexClientName} ({_HTFanCtrl._plexClientIP})");
+            }
+
+            if (string.IsNullOrEmpty(_HTFanCtrl._audioDevice))
+            {
+                html = html.Replace("{AudioDevice}", "None");
+            }
+            else
+            {
+                html = html.Replace("{AudioDevice}", $"{_HTFanCtrl._audioDevice}");
             }
 
             html = html.Replace("{GlobalOffset}", _HTFanCtrl._globalOffsetMS.ToString());
@@ -565,7 +622,7 @@ namespace HTFanControl
             }
             string html = GetHtml(pageName);
 
-            string[] files = Directory.GetFiles(_HTFanCtrl._videoTimecodePath);
+            string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "windtracks"));
             List<string> fileList = new List<string>(files);
             fileList.Sort();
 
@@ -592,7 +649,7 @@ namespace HTFanControl
                 string windCodes = "";
                 try
                 {
-                    windCodes = File.ReadAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, HttpUtility.UrlDecode(values[1])));
+                    windCodes = File.ReadAllText(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), HttpUtility.UrlDecode(values[1])));
                 }
                 catch { }
 
@@ -616,7 +673,7 @@ namespace HTFanControl
                 int filedataEnd = fileInfo.IndexOf("------", filedataStart) - 4;
                 string filedata = fileInfo[filedataStart..filedataEnd];
 
-                File.WriteAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, filename), filedata);
+                File.WriteAllText(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), filename), filedata);
             }
             catch { }
         }
@@ -629,7 +686,7 @@ namespace HTFanControl
             {
                 try
                 {
-                    File.Move(Path.Combine(_HTFanCtrl._videoTimecodePath, renameInfo), Path.Combine(_HTFanCtrl._videoTimecodePath, _HTFanCtrl._currentVideoFileName + ".txt"), true);
+                    File.Move(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), renameInfo), Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), _HTFanCtrl._currentVideoFileName + ".txt"), true);
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(true);
@@ -644,7 +701,7 @@ namespace HTFanControl
             {
                 try
                 {
-                    File.Delete(Path.Combine(_HTFanCtrl._videoTimecodePath, deleteInfo));
+                    File.Delete(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), deleteInfo));
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(true);
@@ -669,7 +726,7 @@ namespace HTFanControl
 
                 try
                 {
-                    File.WriteAllText(Path.Combine(_HTFanCtrl._videoTimecodePath, fileName + ".txt"), windCodes);
+                    File.WriteAllText(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), fileName + ".txt"), windCodes);
                 }
                 catch { }
 
@@ -677,7 +734,7 @@ namespace HTFanControl
             }
         }
 
-        private string GetPlexPlayer(HttpListenerRequest request, string pageName)
+        private string GetPlexPlayers(HttpListenerRequest request, string pageName)
         {
             StringBuilder sb = new StringBuilder();
             try
@@ -715,13 +772,59 @@ namespace HTFanControl
             _HTFanCtrl.ReInitialize(true);
         }
 
+        private string GetAudioDevices(HttpListenerRequest request, string pageName)
+        {
+            StringBuilder sb = new StringBuilder();
+            try
+            {
+                List<string> devices = ALC.GetString(AlcGetStringList.CaptureDeviceSpecifier);
+
+                sb.AppendLine("If you do not see your audio input device listed here, make sure it is plugged in.");
+                sb.AppendLine("<br/>");
+                sb.AppendLine("You will need to restart HTFanControl to see any newly connected input devices.");
+                sb.AppendLine("<br/><br/>");
+
+                foreach (string device in devices)
+                {
+                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""Select('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{0}</span>" + "\n", device);
+                }
+            }
+            catch
+            {
+                if (ConfigHelper.GetOS() == "win")
+                {
+                    sb.AppendLine("OpenAL not installed.");
+                    sb.AppendLine("<br/>");
+                    sb.AppendLine(@"Please run OpenAL Windows Installer from <a href=""https://openal.org/downloads/"">Here</a>");
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private void SaveAudioDevice(HttpListenerRequest request, string pageName)
+        {
+            string audioDevice = GetPostBody(request);
+
+            _HTFanCtrl._audioDevice = audioDevice;
+
+            _HTFanCtrl.SaveSettings();
+            _HTFanCtrl.ReInitialize(true);
+        }
+
         private string LoadedWindTrackData(HttpListenerRequest request, string pageName)
         {
+            string timeMsg = "Current time: ";
+            if (_HTFanCtrl._mediaPlayerType == "Audio")
+            {
+                timeMsg = "Last time match: ";
+            }
+
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine(GetCurrentMovie(request, pageName));
             sb.AppendLine("<br /><br />");
-            sb.AppendLine("Current time: " + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
+            sb.AppendLine(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
             sb.AppendLine("<br /><br />");
 
             if (_HTFanCtrl._videoTimeCodes != null)
@@ -751,20 +854,50 @@ namespace HTFanControl
             return sb.ToString();
         }
 
+        private string SelectVideoPage(HttpListenerRequest request, string pageName)
+        {
+            string html = GetHtml(pageName);
+
+            string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "fingerprints"));
+            List<string> fileList = new List<string>(files);
+            fileList.Sort();
+
+            StringBuilder sb = new StringBuilder();
+            foreach (string s in fileList)
+            {
+                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""selectfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".fingerprints", ""));
+            }
+
+            html = html.Replace("{body}", sb.ToString());
+
+            return html;
+        }
+
         private string GetCurrentMovie(HttpListenerRequest request, string pageName)
         {
-            string moviename = "No movie currently playing";
+            string moviename = "No video currently playing";
+            if (_HTFanCtrl._mediaPlayerType == "Audio")
+            {
+                moviename = "No video currently selected";
+            }
             if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
             {
-                moviename = $"Loaded Movie: {_HTFanCtrl._currentVideoFileName}";
+                moviename = $"Loaded Video: {_HTFanCtrl._currentVideoFileName}";
 
-                if(_HTFanCtrl._isPlaying)
+                if (_HTFanCtrl._mediaPlayerType != "Audio")
                 {
-                    moviename = $"<b>{moviename}</b> <i>(playing)</i>";
+                    if (_HTFanCtrl._isPlaying)
+                    {
+                        moviename = $"<b>{moviename}</b> <i>(playing)</i>";
+                    }
+                    else
+                    {
+                        moviename = $"<b>{moviename}</b> <i>(stopped)</i>";
+                    }
                 }
                 else
                 {
-                    moviename = $"<b>{moviename}</b> <i>(stopped)</i>";
+                    moviename = $"<b>{moviename}</b> <i>{_HTFanCtrl._audioSync.State}</i>";
                 }
             }
 
