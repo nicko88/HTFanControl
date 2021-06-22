@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -136,6 +137,17 @@ namespace FanTrayIcon
         private void itemClose_Click(object sender, EventArgs e)
         {
             trayIcon.Dispose();
+
+            try
+            {
+                DirectoryInfo tmp = new DirectoryInfo(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "tmp"));
+                foreach (FileInfo file in tmp.GetFiles())
+                {
+                    file.Delete();
+                }
+            }
+            catch { }
+
             Environment.Exit(0);
         }
 

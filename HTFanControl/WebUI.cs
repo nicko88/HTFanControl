@@ -13,12 +13,13 @@ using System.Xml.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using OpenTK.Audio.OpenAL;
+using System.IO.Compression;
 
 namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta20";
+        private readonly string _version = "Beta21";
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
@@ -54,7 +55,18 @@ namespace HTFanControl
                 HttpListenerResponse response = context.Response;
 
                 string htmlResponse = "";
-                switch (request.RawUrl)
+                string urlpath;
+
+                if (request.RawUrl.Contains('?'))
+                {
+                    urlpath = request.RawUrl.Remove(request.RawUrl.IndexOf('?'));
+                }
+                else
+                {
+                    urlpath = request.RawUrl;
+                }
+
+                switch (urlpath)
                 {
                     case "/":
                         htmlResponse = StatusPage(request, "status");
@@ -92,9 +104,9 @@ namespace HTFanControl
                     case "/add":
                         htmlResponse = GetHtml("add");
                         break;
-                    case "/uploadlocal":
+                    case "/uploadfile":
                         _waitForFile = true;
-                        UploadLocal(request, "uploadlocal");
+                        UploadFile(request, "uploadfile");
                         break;
                     case "/rename":
                         RenameFile(request, "rename");
@@ -150,7 +162,7 @@ namespace HTFanControl
                         htmlResponse = SelectVideoPage(request, "selectvideo");
                         break;
                     case "/select":
-                        _HTFanCtrl.SelectVideo(GetPostBody(request).Replace(".fingerprints", ""));
+                        _HTFanCtrl.SelectVideo(GetPostBody(request).Replace(".zip", ""));
                         break;
                     case "/fancmd":
                         FanCmd(request, "fancmd");
@@ -566,49 +578,90 @@ namespace HTFanControl
         private static string DownloadListPage(HttpListenerRequest request, string pageName)
         {
             string html = GetHtml(pageName);
+            string searchQ = request.QueryString["searchQ"];
 
             HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("User-Agent", ".netapp");
             try
             {
-                string fileIndex = httpClient.GetStringAsync("https://pastebin.com/raw/uWMR92bf").Result;
+                string indexFile = httpClient.GetStringAsync("https://drive.google.com/uc?export=download&id=1spYA4n3g2QTh0hVLrRulLkL9J0wmRYKa").Result;
+                List<string> videos = indexFile.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
 
-                string[] lines = fileIndex.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                List<string> matchResults = null;
+                if (!string.IsNullOrEmpty(searchQ))
+                {
+                    matchResults = new List<string>();
+                    string[] searchWords = searchQ.Split(' ');
+
+                    foreach(string video in videos)
+                    {
+                        foreach(string s in searchWords)
+                        {
+                            if(video.ToLower().Contains(s.ToLower()))
+                            {
+                                matchResults.Add(video);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if(matchResults != null)
+                {
+                    videos = matchResults;
+                }
 
                 StringBuilder sb = new StringBuilder();
-                foreach (string s in lines)
+                foreach (string s in videos)
                 {
-                    string[] values = s.Split('=');
-                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""downloadfile('https://pastebin.com/raw/{0}', '{1}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", values[1], values[0]);
+                    string[] values = s.Split("==");
+                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""downloadfile('{0}', '{1}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", values[1], values[0]);
                 }
 
                 html = html.Replace("{body}", sb.ToString());
             }
             catch
             {
-                html = html.Replace("{body}", "<br /><br />Could not connect to wind track database (pastebin.com)");
+                html = html.Replace("{body}", "<br /><br />Could not connect to wind track database.");
             }
 
             return html;
         }
 
-        private static string DownloadPage(HttpListenerRequest request, string pageName)
+        private string DownloadPage(HttpListenerRequest request, string pageName)
         {
             string html = GetHtml(pageName);
             string downloadInfo = GetPostBody(request);
 
-            if (!string.IsNullOrEmpty(downloadInfo))
+            try
             {
-                string[] values = downloadInfo.Split('&');
-                string[] filename = HttpUtility.UrlDecode(values[0]).Split('=');
-                string[] url = HttpUtility.UrlDecode(values[1]).Split('=');
+                if (!string.IsNullOrEmpty(downloadInfo))
+                {
+                    string[] values = downloadInfo.Split('&');
+                    string[] filename = HttpUtility.UrlDecode(values[0]).Split('=');
+                    string url = HttpUtility.UrlDecode(values[1].Substring(4));
 
-                HttpClient httpClient = new HttpClient();
-                string windCodes = httpClient.GetStringAsync(url[1]).Result;
+                    using WebClient client = new WebClient();
+                    client.Headers.Add("User-Agent", ".netapp");
+                    client.DownloadFile(url, Path.Combine(_HTFanCtrl._rootPath, "tmp", filename[1] + ".zip"));
 
-                html = html.Replace("{filename}", filename[1]);
-                html = html.Replace("{url}", url[1]);
-                html = html.Replace("{windtrack}", windCodes.Replace("\n", "<br \\>"));
+                    string windCodes = "";
+                    using ZipArchive zip = ZipFile.Open(Path.Combine(_HTFanCtrl._rootPath, "tmp", filename[1] + ".zip"), ZipArchiveMode.Read);
+                    foreach (ZipArchiveEntry entry in zip.Entries)
+                    {
+                        if (entry.Name == "commands.txt")
+                        {
+                            using Stream s = entry.Open();
+                            using StreamReader sr = new StreamReader(s);
+                            windCodes = sr.ReadToEnd();
+                        }
+                    }
+
+                    html = html.Replace("{filename}", filename[1]);
+                    html = html.Replace("{windtrack}", windCodes.Replace("\n", "<br \\>"));
+                }
             }
+            catch { }
 
             return html;
         }
@@ -617,7 +670,7 @@ namespace HTFanControl
         {
             if(_waitForFile)
             {
-                Thread.Sleep(250);
+                Thread.Sleep(500);
                 _waitForFile = false;
             }
             string html = GetHtml(pageName);
@@ -629,7 +682,7 @@ namespace HTFanControl
             StringBuilder sb = new StringBuilder();
             foreach (string s in fileList)
             {
-                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""editfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".txt", ""));
+                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""editfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".txt", "").Replace(".zip", ""));
             }
 
             html = html.Replace("{body}", sb.ToString());
@@ -649,7 +702,23 @@ namespace HTFanControl
                 string windCodes = "";
                 try
                 {
-                    windCodes = File.ReadAllText(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), HttpUtility.UrlDecode(values[1])));
+                    if (values[1].EndsWith(".txt"))
+                    {
+                        windCodes = File.ReadAllText(Path.Combine(_HTFanCtrl._rootPath, "windtracks", HttpUtility.UrlDecode(values[1])));
+                    }
+                    else
+                    {
+                        using ZipArchive zip = ZipFile.Open(Path.Combine(_HTFanCtrl._rootPath, "windtracks", HttpUtility.UrlDecode(values[1])), ZipArchiveMode.Read);
+                        foreach (ZipArchiveEntry entry in zip.Entries)
+                        {
+                            if (entry.Name == "commands.txt")
+                            {
+                                using Stream s = entry.Open();
+                                using StreamReader sr = new StreamReader(s);
+                                windCodes = sr.ReadToEnd();
+                            }
+                        }
+                    }
                 }
                 catch { }
 
@@ -660,20 +729,13 @@ namespace HTFanControl
             return html;
         }
 
-        private void UploadLocal(HttpListenerRequest request, string pageName)
+        private void UploadFile(HttpListenerRequest request, string pageName)
         {
-            string fileInfo = GetPostBody(request);
+            string filename = HttpUtility.UrlDecode(Base64Decode(request.QueryString["filename"]));
+
             try
             {
-                int filenameStart = fileInfo.IndexOf("filename=") + 10;
-                int filenameEnd = fileInfo.IndexOf('"', filenameStart);
-                string filename = fileInfo[filenameStart..filenameEnd];
-
-                int filedataStart = fileInfo.IndexOf("text/plain") + 14;
-                int filedataEnd = fileInfo.IndexOf("------", filedataStart) - 4;
-                string filedata = fileInfo[filedataStart..filedataEnd];
-
-                File.WriteAllText(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), filename), filedata);
+                SaveUploadFile(request, Path.Combine(_HTFanCtrl._rootPath, "windtracks", filename));
             }
             catch { }
         }
@@ -686,7 +748,8 @@ namespace HTFanControl
             {
                 try
                 {
-                    File.Move(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), renameInfo), Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), _HTFanCtrl._currentVideoFileName + ".txt"), true);
+                    string ext = Path.GetExtension(renameInfo);
+                    File.Move(Path.Combine(_HTFanCtrl._rootPath, "windtracks", renameInfo), Path.Combine(_HTFanCtrl._rootPath, "windtracks", _HTFanCtrl._currentVideoFileName + ext), true);
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(true);
@@ -701,7 +764,7 @@ namespace HTFanControl
             {
                 try
                 {
-                    File.Delete(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), deleteInfo));
+                    File.Delete(Path.Combine(_HTFanCtrl._rootPath, "windtracks", deleteInfo));
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(true);
@@ -714,11 +777,7 @@ namespace HTFanControl
 
             if (!string.IsNullOrEmpty(saveInfo))
             {
-                string[] values = saveInfo.Split('=');
-                HttpClient httpClient = new HttpClient();
-                string windCodes = httpClient.GetStringAsync(values[0]).Result;
-
-                string fileName = values[1];
+                string fileName = saveInfo;
                 if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
                 {
                     fileName = _HTFanCtrl._currentVideoFileName;
@@ -726,7 +785,7 @@ namespace HTFanControl
 
                 try
                 {
-                    File.WriteAllText(Path.Combine(Path.Combine(_HTFanCtrl._rootPath, "windtracks"), fileName + ".txt"), windCodes);
+                    File.Move(Path.Combine(_HTFanCtrl._rootPath, "tmp", saveInfo + ".zip"), Path.Combine(_HTFanCtrl._rootPath, "windtracks", fileName + ".zip"), true);
                 }
                 catch { }
 
@@ -858,14 +917,17 @@ namespace HTFanControl
         {
             string html = GetHtml(pageName);
 
-            string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "fingerprints"));
+            string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "windtracks"));
             List<string> fileList = new List<string>(files);
             fileList.Sort();
 
             StringBuilder sb = new StringBuilder();
             foreach (string s in fileList)
             {
-                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""selectfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".fingerprints", ""));
+                if (Path.GetExtension(s) == ".zip")
+                {
+                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""selectfile('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".zip", ""));
+                }
             }
 
             html = html.Replace("{body}", sb.ToString());
@@ -941,6 +1003,115 @@ namespace HTFanControl
             catch { }
 
             return html;
+        }
+
+        private static string Base64Decode(string base64EncodedData)
+        {
+            if (!string.IsNullOrEmpty(base64EncodedData))
+            {
+                byte[] base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+                return Encoding.UTF8.GetString(base64EncodedBytes);
+            }
+            return null;
+        }
+
+        private static void SaveUploadFile(HttpListenerRequest request, string filePath)
+        {
+            string boundary = "--" + request.ContentType.Split(';')[1].Split('=')[1];
+            Byte[] boundaryBytes = request.ContentEncoding.GetBytes(boundary);
+            Int32 boundaryLen = boundaryBytes.Length;
+
+            using (FileStream output = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+            {
+                Byte[] buffer = new Byte[1024];
+                Int32 len = request.InputStream.Read(buffer, 0, 1024);
+                Int32 startPos = -1;
+
+                // Find start boundary
+                while (true)
+                {
+                    if (len == 0)
+                    {
+                        throw new Exception("Start Boundaray Not Found");
+                    }
+
+                    startPos = IndexOf(buffer, len, boundaryBytes);
+                    if (startPos >= 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Array.Copy(buffer, len - boundaryLen, buffer, 0, boundaryLen);
+                        len = request.InputStream.Read(buffer, boundaryLen, 1024 - boundaryLen);
+                    }
+                }
+
+                // Skip four lines (Boundary, Content-Disposition, Content-Type, and a blank)
+                for (Int32 i = 0; i < 4; i++)
+                {
+                    while (true)
+                    {
+                        if (len == 0)
+                        {
+                            throw new Exception("Preamble not Found.");
+                        }
+
+                        startPos = Array.IndexOf(buffer, request.ContentEncoding.GetBytes("\n")[0], startPos);
+                        if (startPos >= 0)
+                        {
+                            startPos++;
+                            break;
+                        }
+                        else
+                        {
+                            len = request.InputStream.Read(buffer, 0, 1024);
+                        }
+                    }
+                }
+
+                Array.Copy(buffer, startPos, buffer, 0, len - startPos);
+                len = len - startPos;
+
+                while (true)
+                {
+                    Int32 endPos = IndexOf(buffer, len, boundaryBytes);
+                    if (endPos >= 0)
+                    {
+                        if (endPos > 0) output.Write(buffer, 0, endPos - 2);
+                        break;
+                    }
+                    else if (len <= boundaryLen)
+                    {
+                        throw new Exception("End Boundaray Not Found");
+                    }
+                    else
+                    {
+                        output.Write(buffer, 0, len - boundaryLen);
+                        Array.Copy(buffer, len - boundaryLen, buffer, 0, boundaryLen);
+                        len = request.InputStream.Read(buffer, boundaryLen, 1024 - boundaryLen) + boundaryLen;
+                    }
+                }
+            }
+        }
+
+        private static Int32 IndexOf(Byte[] buffer, Int32 len, Byte[] boundaryBytes)
+        {
+            for (Int32 i = 0; i <= len - boundaryBytes.Length; i++)
+            {
+                Boolean match = true;
+                for (Int32 j = 0; j < boundaryBytes.Length && match; j++)
+                {
+                    match = buffer[i + j] == boundaryBytes[j];
+                }
+
+                if (match)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
     }
 

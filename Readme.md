@@ -11,9 +11,9 @@ The program is meant to run in the background and be controlled through a web in
 
 ### Wind Tracks
 
-HTFanControl uses specially created wind track text files for each movie with coded time stamps and wind speeds.
+HTFanControl uses specially created wind track files for each movie with coded time stamps and wind speeds.
 
-A current database of wind track files created by the community is hosted [here](https://pastebin.com/u/SOWK).
+A current database of wind track files created by the community is hosted [here](https://drive.google.com/drive/u/0/folders/13xoJMKeXX69woyt1Qzd_Qz_L6MUwTd1K).
 
 These wind tracks can also be downloaded through the HTFanControl web interface as well.
 

@@ -43,7 +43,7 @@ namespace HTFanControl
                 FileName = Path.GetFileNameWithoutExtension(doc.GetElementbyId("file").InnerText);
                 FilePath = doc.GetElementbyId("filedir").InnerText;
 
-                VideoTime = Int64.Parse(doc.GetElementbyId("position").InnerText);
+                VideoTime = long.Parse(doc.GetElementbyId("position").InnerText);
 
                 //Get file from Kodi if MPC looks like it is a mounted ISO.
                 if (FilePath.Contains(@"\BDMV"))

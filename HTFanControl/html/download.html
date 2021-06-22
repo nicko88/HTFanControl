@@ -2,7 +2,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<title>Download Wind Track</title>
+	<title>Save Wind Track</title>
 	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 	<script>
-		function downloadfile()
+		function savefile()
 		{
             var r = confirm("Are you sure?");
 			if (r == true) {
@@ -26,7 +26,7 @@
 					headers: {
 						'Content-Type': 'application/text',
 					},
-					body: document.getElementById('url').value + '=' + document.getElementById('filename').value
+					body: document.getElementById('filename').value
 				});
 
 				window.location.href = "/";
@@ -97,12 +97,11 @@
 
 		<div id="currentmovie"></div>
 		<br />
-		<button onclick="downloadfile()" class="btn btn-primary">Download Wind Track</button>
+		<button onclick="savefile()" class="btn btn-primary">Save Wind Track</button>
 		<br /><br />
 		{windtrack}
 
 		<input type="hidden" id="filename" name="filename" value="{filename}">
-		<input type="hidden" id="url" name="url" value="{url}">
 
 	</div>
 </body>

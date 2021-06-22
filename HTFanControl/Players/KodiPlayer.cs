@@ -58,7 +58,7 @@ namespace HTFanControl
                         HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                         doc.LoadHtml(html);
 
-                        VideoTime = Int64.Parse(doc.GetElementbyId("position").InnerText);
+                        VideoTime = long.Parse(doc.GetElementbyId("position").InnerText);
 
                         if (doc.GetElementbyId("statestring").InnerText == "Playing")
                         {

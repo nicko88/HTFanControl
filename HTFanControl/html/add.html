@@ -19,11 +19,12 @@
 	<script>
 		function uploadfile()
 		{
-            let windtrack = document.getElementById("image-file").files[0];
-            let formData = new FormData();
+			let windtrack = document.getElementById("image-file").files[0];
+            let filename = document.getElementById("image-file").files[0].name;
 
+            let formData = new FormData();
             formData.append("windtrack", windtrack);
-			fetch('uploadlocal', { method: "POST", body: formData });
+            fetch('uploadfile' + '?filename=' + btoa(filename), { method: "POST", body: formData });
 
             window.location.href = "manage";
 		}

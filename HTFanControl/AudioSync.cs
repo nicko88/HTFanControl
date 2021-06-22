@@ -18,6 +18,8 @@ namespace HTFanControl
     {
         private bool verifyAccuracy = false;
         private string _state;
+        private TimeSpan _lastMatchTime;
+        private bool _timeJump = false;
 
         private InMemoryModelService _modelService;
 
@@ -25,7 +27,7 @@ namespace HTFanControl
         private BlockingCollection<AudioSamples> _blockingCollection;
         private List<float> _float32Buffer = new List<float>();
 
-        private Timer _pause;
+        //private Timer _pause;
 
         private Thread _recordMic;
         private HTFanControl _hTFanControl;
@@ -48,16 +50,18 @@ namespace HTFanControl
             }
         }
 
-        public void Start(string movieName)
+        public void Start(string fileName)
         {
             tokenSource = new CancellationTokenSource();
 
-            LoadFingerprint(movieName);
+            LoadFingerprint(fileName);
 
             _recordMic = new Thread(RecordOpenTK);
             _recordMic.Start(tokenSource.Token);
 
             //_pause = new Timer(Pause, null, Timeout.Infinite, Timeout.Infinite);
+
+            _lastMatchTime = TimeSpan.MinValue;
 
             StartMatching(tokenSource.Token);
         }
@@ -83,21 +87,21 @@ namespace HTFanControl
             catch { }
         }
 
-        private void LoadFingerprint(string movieName)
+        private void LoadFingerprint(string fileName)
         {
-            string validFileName = null;
+            string validFilePath = null;
             try
             {
-                if (File.Exists(Path.Combine(Path.Combine(_hTFanControl._rootPath, "fingerprints"), movieName + ".fingerprints")))
+                if (File.Exists(Path.Combine(_hTFanControl._rootPath, "tmp", fileName + ".fingerprints")))
                 {
-                    validFileName = Path.Combine(Path.Combine(_hTFanControl._rootPath, "fingerprints"), movieName + ".fingerprints");
+                    validFilePath = Path.Combine(_hTFanControl._rootPath, "tmp", fileName + ".fingerprints");
                 }
 
-                _modelService = new InMemoryModelService(validFileName);
+                _modelService = new InMemoryModelService(validFilePath);
             }
             catch
             {
-                _hTFanControl._errorStatus = $"Failed to load audio fingerprints from: {Path.Combine(Path.Combine(_hTFanControl._rootPath, "fingerprints"), movieName + ".fingerprints")}";
+                _hTFanControl._errorStatus = $"Failed to load audio fingerprints from: {validFilePath}";
             }
         }
 
@@ -117,40 +121,57 @@ namespace HTFanControl
 
         private void FoundMatch(ResultEntry resultEntry)
         {
-            TimeSpan audioTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength - resultEntry.QueryMatchStartsAt + 0.625);
+            _timeJump = false;
+            TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength - resultEntry.QueryMatchStartsAt + 0.625);
 
-            Console.WriteLine($"Match Found: {audioTime:G}");
-            _hTFanControl._currentVideoTime = Convert.ToInt64(audioTime.TotalMilliseconds);
-            _hTFanControl.UpdateTime();
+            if(matchTime > _lastMatchTime.Add(TimeSpan.FromMinutes(5)) || matchTime < _lastMatchTime.Subtract(TimeSpan.FromMinutes(5)))
+            {
+                _timeJump = true;
+                _lastMatchTime = matchTime;
+                Console.WriteLine("Time Jump Detected");
+            }
+
+            if (!_timeJump)
+            {
+                Console.WriteLine($"Match Found: {matchTime:G}");
+                _hTFanControl._currentVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
+                _hTFanControl.UpdateTime();
+                _lastMatchTime = matchTime;
+            }
 
             //_pause.Change(10000, Timeout.Infinite);
 
             if (verifyAccuracy)
             {
-                long position = 0;
-                try
-                {
-                    HttpClient httpClient = new HttpClient();
-                    string html = httpClient.GetStringAsync($"http://127.0.0.1:13579/variables.html").Result;
-
-                    HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
-                    doc.LoadHtml(html);
-
-                    position = Int64.Parse(doc.GetElementbyId("position").InnerText);
-                }
-                catch { }
-
-                TimeSpan playerTime = TimeSpan.FromMilliseconds(position);
-                string matchResult = $"Accuracy:{audioTime.Subtract(playerTime).TotalMilliseconds} AudioTime:{audioTime:G} PlayerTime:{playerTime:G}";
-                Console.WriteLine(matchResult);
+                VerifyAccuracy(matchTime);
             }
         }
 
-        private void Pause(object o)
+        private void VerifyAccuracy(TimeSpan audioTime)
         {
-            _pause.Change(Timeout.Infinite, Timeout.Infinite);
-            Console.WriteLine("PAUSED");
+            long position = 0;
+            try
+            {
+                HttpClient httpClient = new HttpClient();
+                string html = httpClient.GetStringAsync($"http://{_hTFanControl._mediaPlayerIP}:{_hTFanControl._mediaPlayerPort}/variables.html").Result;
+
+                HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+                doc.LoadHtml(html);
+
+                position = long.Parse(doc.GetElementbyId("position").InnerText);
+            }
+            catch { }
+
+            TimeSpan playerTime = TimeSpan.FromMilliseconds(position);
+            string matchResult = $"Accuracy:{audioTime.Subtract(playerTime).TotalMilliseconds} AudioTime:{audioTime:G} PlayerTime:{playerTime:G}";
+            Console.WriteLine(matchResult);
         }
+
+        //private void Pause(object o)
+        //{
+        //    _pause.Change(Timeout.Infinite, Timeout.Infinite);
+        //    Console.WriteLine("PAUSED");
+        //}
 
         private void RecordOpenTK(object cancellationToken)
         {

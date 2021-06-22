@@ -28,9 +28,9 @@ namespace HTFanControl
                 Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks"));
             }
 
-            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "fingerprints")))
+            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "tmp")))
             {
-                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "fingerprints"));
+                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "tmp"));
             }
 
             Console.WriteLine("http://" + ConfigHelper.GetIP() + ":5500");

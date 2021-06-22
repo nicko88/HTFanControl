@@ -19,6 +19,12 @@
 	<script>
 		function downloadfile(url, filename)
 		{
+			document.getElementById("msg").style.display = "none";
+			document.getElementById("list").style.display = "none";
+            document.getElementById("search").style.display = "none";
+            document.getElementById("video").innerHTML = filename;
+			document.getElementById("wait").style.display = "block";
+
             document.getElementById('url').value = url;
 			document.getElementById('filename').value = filename;
 
@@ -30,7 +36,7 @@
             const response = await fetch("currentmovie")
             const html = await response.text();
             document.getElementById("currentmovie").innerHTML = html;
-        }
+		}
 
 		load_movie();
         setInterval(load_movie, 1000);
@@ -88,9 +94,17 @@
 		</ul>
 
 		<div id="currentmovie"></div>
-		Click on a video below to download wind track.
+		<br/>
+		<div id="msg">Click on a title below to download wind track.</div>
 
-		{body}
+		<form id="search">
+			<input type="text" name="searchQ">
+			<button type="submit" class="btn btn-primary">Search</button>
+		</form>
+
+		<div id="wait" style="display: none"><br/>Loading Wind Track:<b><span id="video"></span></b><br/><br/>Please Wait...</div>
+
+		<div id="list">{body}</div>
 
 		<form method="post" id="downloadform" action="download">
 			<input type="hidden" id="filename" name="filename" value="">

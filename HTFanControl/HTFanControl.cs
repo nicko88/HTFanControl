@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using HTFanControl.Timers;
+using System.IO.Compression;
 
 namespace HTFanControl
 {
@@ -243,6 +244,11 @@ namespace HTFanControl
 
         public async void SelectVideo(string fileName)
         {
+            ExtractWindtrack(Path.Combine(_rootPath, "windtracks", fileName + ".zip"), true);
+
+            _currentVideoFileName = "Loading Video Fingerprints...";
+            _windTrackHeader = "Loading Windtrack...";
+
             _audioSync.Start(fileName);
             _currentVideoFileName = fileName;
             LoadVideoTimecodes(fileName, "");
@@ -501,35 +507,70 @@ namespace HTFanControl
             Thread.Sleep(25);
         }
 
-        private void LoadVideoTimecodes(string fileName, string filePath)
+        private string GetWindtrackFilePath(string fileName, string filePath)
         {
-            string validFileName = null;
-            _offset = 0;
+            string validFilePath = null;
 
-            //look for wind track in windtrack folder
+            //look for windtrack .txt in tmp folder
             try
             {
-                if (File.Exists(Path.Combine(Path.Combine(_rootPath, "windtracks"), fileName + ".txt")))
+                if (File.Exists(Path.Combine(_rootPath, "tmp", fileName + ".txt")))
                 {
-                    validFileName = Path.Combine(Path.Combine(_rootPath, "windtracks"), fileName + ".txt");
+                    validFilePath = Path.Combine(_rootPath, "tmp", fileName + ".txt");
                 }
             }
             catch { }
 
-            //if it wasnt in the windtrack folder, check the movie folder
-            if (string.IsNullOrEmpty(validFileName))
+            //look for windtrack .zip archive in windtracks folder
+            try
             {
-                try
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(_rootPath, "windtracks", fileName + ".zip")))
                 {
-                    if (File.Exists(Path.Combine(filePath, fileName + ".txt")))
-                    {
-                        validFileName = Path.Combine(filePath, fileName + ".txt");
-                    }
+                    ExtractWindtrack(Path.Combine(_rootPath, "windtracks", fileName + ".zip"), false);
+                    validFilePath = Path.Combine(_rootPath, "tmp", fileName + ".txt");
                 }
-                catch { }
             }
+            catch { }
 
-            if (!string.IsNullOrEmpty(validFileName))
+            //if not found, look in the active video's folder
+            try
+            {
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(filePath, fileName + ".zip")))
+                {
+                    ExtractWindtrack(Path.Combine(filePath, fileName + ".zip"), false);
+                    validFilePath = Path.Combine(_rootPath, "tmp", fileName + ".txt");
+                }
+            }
+            catch { }
+
+            //LEGACY look in windtrack folder
+            try
+            {
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(_rootPath, "windtracks", fileName + ".txt")))
+                {
+                    validFilePath = Path.Combine(_rootPath, "windtracks", fileName + ".txt");
+                }
+            }
+            catch { }
+
+            //check the active video's folder
+            try
+            {
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(filePath, fileName + ".txt")))
+                {
+                    validFilePath = Path.Combine(filePath, fileName + ".txt");
+                }
+            }
+            catch { }
+ 
+            return validFilePath;
+        }
+
+        private void LoadVideoTimecodes(string fileName, string filePath)
+        {
+            string validFilePath = GetWindtrackFilePath(fileName, filePath);
+
+            if (!string.IsNullOrEmpty(validFilePath))
             {
                 _windtrackError = null;
 
@@ -538,7 +579,8 @@ namespace HTFanControl
                 _videoTimeCodes = new List<Tuple<TimeSpan, string>>();
                 _windTrackHeader = "";
 
-                string[] lines = File.ReadAllLines(validFileName);
+                string[] lines = File.ReadAllLines(validFilePath);
+                _offset = 0;
                 string lastCmd = "OFF";
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
@@ -696,6 +738,33 @@ namespace HTFanControl
                 Console.WriteLine($"SET_TRANSMITTERS {irChannels}\n");
 
                 SendToLIRC(data);
+            }
+        }
+
+        private void ExtractWindtrack(string filePath, bool extractFingerprint)
+        {
+            DirectoryInfo tmp = new DirectoryInfo(Path.Combine(_rootPath, "tmp"));
+            foreach (FileInfo file in tmp.GetFiles())
+            {
+                file.Delete();
+            }
+
+            string fileName = Path.GetFileNameWithoutExtension(filePath);
+
+            try
+            {
+                using ZipArchive archive = ZipFile.OpenRead(filePath);
+
+                archive.Entries.Where(e => e.Name.Equals("commands.txt")).Single().ExtractToFile(Path.Combine(_rootPath, "tmp", fileName + ".txt"), true);
+
+                if (extractFingerprint)
+                {
+                    archive.Entries.Where(e => e.Name.Equals("full.fingerprints")).Single().ExtractToFile(Path.Combine(_rootPath, "tmp", fileName + ".fingerprints"), true);
+                }
+            }
+            catch
+            {
+                _errorStatus = $"Failed to extract windtrack file: {filePath}";
             }
         }
     }
