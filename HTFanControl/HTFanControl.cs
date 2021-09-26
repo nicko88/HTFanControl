@@ -4,12 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using HTFanControl.Timers;
 using System.IO.Compression;
+using HTFanControl.Controllers;
 
 namespace HTFanControl
 {
@@ -25,20 +23,29 @@ namespace HTFanControl
         public int _nextCmdIndex = 0;
         public bool _isPlaying = false;
         public bool _isEnabled = true;
+        public bool _hasOffset = false;
         public double _offset = 0;
         public bool _offsetEnabled = false;
 
         public readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
         public List<Tuple<TimeSpan, string>> _videoTimeCodes;
-        private Dictionary<string, string> _lircMapping;
 
         public string _mediaPlayerType = "MPC";
         public string _mediaPlayerIP = "127.0.0.1";
         public string _mediaPlayerPort = "13579";
+        public string _controllerType = "LIRC";
         public string _lircIP = "127.0.0.1";
         public string _lircPort = "8765";
         public string _lircRemote = "EHF10127B";
+        public string _mqttIP;
+        public string _mqttPort;
+        public string _mqttTopic;
+        public string _mqttOFFcmd;
+        public string _mqttECOcmd;
+        public string _mqttLOWcmd;
+        public string _mqttMEDcmd;
+        public string _mqttHIGHcmd;
         public string _audioDevice;
         public string _PlexToken;
         public string _plexClientName;
@@ -59,20 +66,17 @@ namespace HTFanControl
 
         public AudioSync _audioSync;
 
-        private Socket _lircSocket;
+        public IController _fanController;
 
         public HTFanControl()
         {
             LoadSettings();
             SaveSettings();
 
-            LoadLIRCMapping();
-
             _syncTimer = new Timer(SyncTimerTick, null, Timeout.Infinite, Timeout.Infinite);
             SelectSyncSource();
 
-            ConnectToLIRC();
-            SetTransmitters();
+            SelectController();
         }
 
         public void ReInitialize(bool fullRefresh)
@@ -93,10 +97,9 @@ namespace HTFanControl
 
             SelectSyncSource();
 
-            if(fullRefresh)
+            if (fullRefresh)
             {
-                LoadLIRCMapping();
-                SetTransmitters();
+                SelectController();
             }
         }
 
@@ -107,7 +110,7 @@ namespace HTFanControl
                 string[] settingsFile = File.ReadAllLines(Path.Combine(_rootPath, "HTFanControlSettings.txt"));
                 Dictionary<string, string> settings = settingsFile.ToDictionary(x => x.Split('=')[0], x => x.Split('=')[1]);
 
-                if(!settings.TryGetValue("MediaPlayer", out _mediaPlayerType))
+                if (!settings.TryGetValue("MediaPlayer", out _mediaPlayerType))
                 {
                     _mediaPlayerType = "MPC";
                 }
@@ -119,7 +122,11 @@ namespace HTFanControl
                 {
                     _mediaPlayerPort = "13579";
                 }
-                if(!settings.TryGetValue("LircIP", out _lircIP))
+                if (!settings.TryGetValue("Controller", out _controllerType))
+                {
+                    _controllerType = "LIRC";
+                }
+                if (!settings.TryGetValue("LircIP", out _lircIP))
                 {
                     _lircIP = "127.0.0.1";
                 }
@@ -131,6 +138,15 @@ namespace HTFanControl
                 {
                     _lircRemote = "EHF10127B";
                 }
+
+                settings.TryGetValue("MqttIP", out _mqttIP);
+                settings.TryGetValue("MqttPort", out _mqttPort);
+                settings.TryGetValue("MqttTopic", out _mqttTopic);
+                settings.TryGetValue("MqttOFFcmd", out _mqttOFFcmd);
+                settings.TryGetValue("MqttECOcmd", out _mqttECOcmd);
+                settings.TryGetValue("MqttLOWcmd", out _mqttLOWcmd);
+                settings.TryGetValue("MqttMEDcmd", out _mqttMEDcmd);
+                settings.TryGetValue("MqttHIGHcmd", out _mqttHIGHcmd);
 
                 settings.TryGetValue("AudioDevice", out _audioDevice);
 
@@ -153,7 +169,7 @@ namespace HTFanControl
                     _spindownOffsetMS = "0";
                 }
 
-                if (ConfigHelper.GetOS() != "win")
+                if (_OS != "win")
                 {
                     if(!settings.TryGetValue("IRChan1", out _irChan1))
                     {
@@ -188,9 +204,18 @@ namespace HTFanControl
                     "MediaPlayer=" + _mediaPlayerType,
                     "MediaPlayerIP=" + _mediaPlayerIP,
                     "MediaPlayerPort=" + _mediaPlayerPort,
+                    "Controller=" + _controllerType,
                     "LircIP=" + _lircIP,
                     "LircPort=" + _lircPort,
                     "LircRemote=" + _lircRemote,
+                    "MqttIP=" + _mqttIP,
+                    "MqttPort=" + _mqttPort,
+                    "MqttTopic=" + _mqttTopic,
+                    "MqttOFFcmd=" + _mqttOFFcmd,
+                    "MqttECOcmd=" + _mqttECOcmd,
+                    "MqttLOWcmd=" + _mqttLOWcmd,
+                    "MqttMEDcmd=" + _mqttMEDcmd,
+                    "MqttHIGHcmd=" + _mqttHIGHcmd,
                     "AudioDevice=" + _audioDevice,
                     "PlexToken=" + _PlexToken,
                     "PlexClientName=" + _plexClientName,
@@ -202,7 +227,7 @@ namespace HTFanControl
                     "SpindownOffsetMS=" + _spindownOffsetMS
                 };
 
-                if (ConfigHelper.GetOS() != "win")
+                if (_OS != "win")
                 {
                     settings.Add("IRChan1=" + _irChan1);
                     settings.Add("IRChan2=" + _irChan2);
@@ -211,12 +236,25 @@ namespace HTFanControl
                 }
 
                 File.WriteAllLines(Path.Combine(_rootPath, "HTFanControlSettings.txt"), settings);
-
-                SetTransmitters();
             }
             catch (Exception e)
             {
                 _errorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed to save settings.\n\n{e.Message}";
+            }
+        }
+
+        private void SelectController()
+        {
+            _fanController = _controllerType switch
+            {
+                "LIRC" => new LIRCController(_lircIP, _lircPort, _lircRemote, _irChan1, _irChan2, _irChan3, _irChan4),
+                "MQTT" => new MQTTController(_mqttIP, _mqttPort, _mqttTopic, _mqttOFFcmd, _mqttECOcmd, _mqttLOWcmd, _mqttMEDcmd, _mqttHIGHcmd),
+                _ => new LIRCController(_lircIP, _lircPort, _lircRemote, _irChan1, _irChan2, _irChan3, _irChan4),
+            };
+
+            if(!_fanController.Connect())
+            {
+                _errorStatus = _fanController.ErrorStatus;
             }
         }
 
@@ -278,10 +316,11 @@ namespace HTFanControl
             {
                 _isEnabled = false;
 
-                byte[] cmd = Encoding.ASCII.GetBytes($"SEND_ONCE {_lircRemote} OFF\n");
-
+                if (!_fanController.SendCMD("OFF"))
+                {
+                    _errorStatus = _fanController.ErrorStatus;
+                }
                 Console.WriteLine("Fans Disabled");
-                SendToLIRC(cmd);
             }
             else
             {
@@ -295,31 +334,12 @@ namespace HTFanControl
                     {
                         if (_isPlaying)
                         {
-                            byte[] cmd = Encoding.ASCII.GetBytes($"SEND_ONCE {_lircRemote} {_videoTimeCodes[_curCmdIndex].Item2}\n");
+                            if (!_fanController.SendCMD(_videoTimeCodes[_curCmdIndex].Item2))
+                            {
+                                _errorStatus = _fanController.ErrorStatus;
+                            }
                             Console.WriteLine($"Sent CMD: {_videoTimeCodes[_curCmdIndex].Item1.ToString("G").Substring(2, 12)},{_videoTimeCodes[_curCmdIndex].Item2}");
-
-                            SendToLIRC(cmd);
                         }
-                    }
-                    catch { }
-                }
-            }
-        }
-
-        private void LoadLIRCMapping()
-        {
-            _lircMapping = null;
-            if (File.Exists(Path.Combine(_rootPath, "lircmapping.txt")))
-            {
-                _lircMapping = new Dictionary<string, string>();
-                string[] mappingFile = File.ReadAllLines(Path.Combine(_rootPath, "lircmapping.txt"));
-
-                foreach(string s in mappingFile)
-                {
-                    try
-                    {
-                        string[] vals = s.Split('=');
-                        _lircMapping.Add(vals[1], vals[0]);
                     }
                     catch { }
                 }
@@ -388,15 +408,18 @@ namespace HTFanControl
 
         private void SendCmd(PositionTimer videoTimer, (string cmd, int index) command)
         {
-            var (fanCmd, i) = command;
+            (string fanCmd, int i) = command;
             _curCmdIndex = i;
+
             if(i == -1)
             {
-                fanCmd = "OFF";
-
-                if (_lircMapping != null && _lircMapping.TryGetValue("STOP", out string stopCMD))
+                if(_fanController is LIRCController)
                 {
-                    fanCmd = stopCMD;
+                    fanCmd = "STOP";
+                }
+                else
+                {
+                    fanCmd = "OFF";
                 }
             }
             else
@@ -415,96 +438,13 @@ namespace HTFanControl
 
             if (_isEnabled)
             {
-                string[] cmds = fanCmd.Split(',');
-
-                foreach(string cmd in cmds)
+                if (!_fanController.SendCMD(fanCmd))
                 {
-                    if (_lircMapping != null && _lircMapping.TryGetValue(cmd, out string remote))
-                    {
-                        _lircRemote = remote;
-                    }
-
-                    byte[] cmdBytes = Encoding.ASCII.GetBytes($"SEND_ONCE {_lircRemote} {cmd}\n");
-                    SendToLIRC(cmdBytes);
+                    _errorStatus = _fanController.ErrorStatus;
                 }
             }
 
             Thread.Sleep(250);
-        }
-
-        public void SendToLIRC(byte[] cmd)
-        {
-            bool tryAgain = false;
-            try
-            {
-                _lircSocket.Send(cmd);
-
-                if ((_lircSocket.Poll(1000, SelectMode.SelectRead) && (_lircSocket.Available == 0)) || !_lircSocket.Connected)
-                {
-                    throw new Exception();
-                }
-            }
-            catch
-            {
-                tryAgain = true;
-            }
-
-            if(tryAgain)
-            {
-                try
-                {
-                    Thread.Sleep(75);
-                    ConnectToLIRC();
-
-                    _lircSocket.Send(cmd);
-
-                    if ((_lircSocket.Poll(1000, SelectMode.SelectRead) && (_lircSocket.Available == 0)) || !_lircSocket.Connected)
-                    {
-                        throw new Exception();
-                    }
-                }
-                catch
-                {
-                    _errorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed sending command to LIRC at: {_lircIP}:{_lircPort}";
-                }
-            }
-        }
-
-        private void ConnectToLIRC()
-        {
-            if (_lircSocket != null)
-            {
-                try
-                {
-                    _lircSocket.Shutdown(SocketShutdown.Both);
-                    _lircSocket.Close();
-                }
-                catch { }
-            }
-
-            try
-            {
-                IPAddress ipAddress = IPAddress.Parse(_lircIP);
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, Convert.ToInt32(_lircPort));
-                _lircSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                IAsyncResult result = _lircSocket.BeginConnect(remoteEP, null, null);
-                result.AsyncWaitHandle.WaitOne(1000);
-
-                if (!_lircSocket.Connected)
-                {
-
-                    throw new Exception();
-                }
-
-                _lircSocket.EndConnect(result);
-            }
-            catch
-            {
-                _errorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to LIRC at: {_lircIP}:{_lircPort}";
-            }
-
-            Thread.Sleep(25);
         }
 
         private string GetWindtrackFilePath(string fileName, string filePath)
@@ -574,8 +514,6 @@ namespace HTFanControl
             {
                 _windtrackError = null;
 
-                SetTransmitters();
-
                 _videoTimeCodes = new List<Tuple<TimeSpan, string>>();
                 _windTrackHeader = "";
 
@@ -584,6 +522,7 @@ namespace HTFanControl
                 string lastCmd = "OFF";
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
+                bool verifyOrder = true;
                 double globalOffsetMS = Convert.ToDouble(_globalOffsetMS);
                 double spinupOffsetMS = Convert.ToDouble(_spinupOffsetMS);
                 double spindownOffsetMS = Convert.ToDouble(_spindownOffsetMS);
@@ -604,8 +543,14 @@ namespace HTFanControl
                             {
                                 TimeSpan ts = TimeSpan.Parse(line.Substring(line.IndexOf('(') + 1, line.LastIndexOf(')') - line.IndexOf('(') - 1));
                                 _offset = ts.TotalMilliseconds;
+                                _hasOffset = true;
                             }
                             catch { }
+                        }
+
+                        if (line.Contains("ignoreorder"))
+                        {
+                            verifyOrder = false;
                         }
                     }
                     //non-comment or blank lines
@@ -645,20 +590,17 @@ namespace HTFanControl
 
                         if(timeCode != null)
                         {
-                            //apply special offset if enabled
-                            if (_offsetEnabled)
+                            //detect out of order line and error
+                            if (verifyOrder)
                             {
-                                timeCode += _offset;
-                                rawPrevTime += _offset;
-                            }
-                            //skip out of order line and error
-                            if (timeCode < rawPrevTime)
-                            {
-                                if (_windtrackError is null)
+                                if (timeCode < rawPrevTime)
                                 {
-                                    _windtrackError = $"Timecode on line {i+1} is out of order";
+                                    if (_windtrackError is null)
+                                    {
+                                        _windtrackError = $"Timecode on line {i + 1} is out of order";
+                                    }
+                                    break;
                                 }
-                                break;
                             }
 
                             rawPrevTime = (double)timeCode;
@@ -682,8 +624,14 @@ namespace HTFanControl
                                 }
                             }
 
+                            //ignore offset if it's not enabled
+                            if(!_offsetEnabled)
+                            {
+                                _offset = 0;
+                            }
+
                             //keep clearing the list if the timecode is less than or equal to 0 so that we only end up with 1 timecode at 0 at the start
-                            if(timeCode <= 0)
+                            if ((timeCode + _offset) <= 0)
                             {
                                 _videoTimeCodes.Clear();
                                 timeCode = 0;
@@ -695,7 +643,7 @@ namespace HTFanControl
                                 cmds += lineData[j] + ",";
                             }
 
-                            _videoTimeCodes.Add(new Tuple<TimeSpan, string>(TimeSpan.FromMilliseconds((double)timeCode), cmds.Trim(',')));
+                            _videoTimeCodes.Add(new Tuple<TimeSpan, string>(TimeSpan.FromMilliseconds((double)timeCode + _offset), cmds.Trim(',')));
 
                             if (isFanCmd)
                             {
@@ -705,39 +653,13 @@ namespace HTFanControl
                         }
                     }
                 }
+
+                //sort timecodes just to be safe for special cases where they could be out of order
+                _videoTimeCodes = _videoTimeCodes.OrderBy(v => v.Item1).ToList();
             }
             else
             {
                 _videoTimeCodes = null;
-            }
-        }
-
-        private void SetTransmitters()
-        {
-            if (_OS != "win")
-            {
-                string irChannels = "";
-                if (_irChan1 == "true")
-                {
-                    irChannels += "1 ";
-                }
-                if (_irChan2 == "true")
-                {
-                    irChannels += "2 ";
-                }
-                if (_irChan3 == "true")
-                {
-                    irChannels += "3 ";
-                }
-                if (_irChan4 == "true")
-                {
-                    irChannels += "4 ";
-                }
-
-                byte[] data = Encoding.ASCII.GetBytes($"SET_TRANSMITTERS {irChannels}\n");
-                Console.WriteLine($"SET_TRANSMITTERS {irChannels}\n");
-
-                SendToLIRC(data);
             }
         }
 

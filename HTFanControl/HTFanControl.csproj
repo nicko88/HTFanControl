@@ -6,6 +6,9 @@
 	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
 	<Configurations>Debug;ReleaseWin;ReleaseLinux</Configurations>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <Version>0.1.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLinux|AnyCPU'">
@@ -68,9 +71,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.34" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.36" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="OpenTK.OpenAL" Version="4.6.4" />
+    <PackageReference Include="MQTTnet" Version="3.0.16" />
+    <PackageReference Include="OpenTK.OpenAL" Version="4.6.7" />
     <PackageReference Include="SoundFingerprinting" Version="7.9.6" />
     <PackageReference Include="SoundFingerprinting.Emy" Version="7.9.6" />
   </ItemGroup>

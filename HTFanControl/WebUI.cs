@@ -19,7 +19,7 @@ namespace HTFanControl
 {
     class WebUI
     {
-        private readonly string _version = "Beta21";
+        private readonly string _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _waitForFile = false;
@@ -146,10 +146,10 @@ namespace HTFanControl
                         break;
                     case "/toggleoffset":
                         _HTFanCtrl._offsetEnabled = !_HTFanCtrl._offsetEnabled;
-                        _HTFanCtrl.ReInitialize(true);
+                        _HTFanCtrl.ReInitialize(false);
                         break;
                     case "/fantester":
-                        _HTFanCtrl.ReInitialize(true);
+                        _HTFanCtrl.ReInitialize(false);
                         htmlResponse = GetHtml("fantester");
                         break;
                     case "/loadedwindtrack":
@@ -255,7 +255,7 @@ namespace HTFanControl
                     htmlData.AppendLine("<br />");
                     htmlData.AppendLine("<button onclick=\"window.location.href = 'loadedwindtrack';\" class=\"btn btn-primary\">View Wind Track</button>");
 
-                    if (_HTFanCtrl._offset != 0)
+                    if (_HTFanCtrl._hasOffset && _HTFanCtrl._mediaPlayerType != "Audio")
                     {
                         if (_HTFanCtrl._offsetEnabled)
                         {
@@ -342,9 +342,27 @@ namespace HTFanControl
                 html = GetHtml("settingslinux");
             }
 
+            if (_HTFanCtrl._controllerType == "LIRC")
+            {
+                html = html.Replace("{LIRC}", "checked");
+            }
+            else if (_HTFanCtrl._controllerType == "MQTT")
+            {
+                html = html.Replace("{MQTT}", "checked");
+            }
+
             html = html.Replace("{LircIP}", _HTFanCtrl._lircIP);
             html = html.Replace("{LircPort}", _HTFanCtrl._lircPort);
             html = html.Replace("{LircRemote}", _HTFanCtrl._lircRemote);
+
+            html = html.Replace("{MqttIP}", _HTFanCtrl._mqttIP);
+            html = html.Replace("{MqttPort}", _HTFanCtrl._mqttPort);
+            html = html.Replace("{MqttTopic}", _HTFanCtrl._mqttTopic);
+            html = html.Replace("{MqttOFFcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttOFFcmd));
+            html = html.Replace("{MqttECOcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttECOcmd));
+            html = html.Replace("{MqttLOWcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttLOWcmd));
+            html = html.Replace("{MqttMEDcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttMEDcmd));
+            html = html.Replace("{MqttHIGHcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttHIGHcmd));
 
             if (_HTFanCtrl._mediaPlayerType == "MPC")
             {
@@ -454,9 +472,18 @@ namespace HTFanControl
             {
                 using JsonDocument data = JsonDocument.Parse(settingsInfoJSON);
 
+                _HTFanCtrl._controllerType = data.RootElement.GetProperty("Controller").GetString();
                 _HTFanCtrl._lircIP = data.RootElement.GetProperty("LircIP").GetString();
                 _HTFanCtrl._lircPort = data.RootElement.GetProperty("LircPort").GetString();
                 _HTFanCtrl._lircRemote = data.RootElement.GetProperty("LircRemote").GetString();
+                _HTFanCtrl._mqttIP = data.RootElement.GetProperty("MqttIP").GetString();
+                _HTFanCtrl._mqttPort = data.RootElement.GetProperty("MqttPort").GetString();
+                _HTFanCtrl._mqttTopic = data.RootElement.GetProperty("MqttTopic").GetString();
+                _HTFanCtrl._mqttOFFcmd = data.RootElement.GetProperty("MqttOFFcmd").GetString();
+                _HTFanCtrl._mqttECOcmd = data.RootElement.GetProperty("MqttECOcmd").GetString();
+                _HTFanCtrl._mqttLOWcmd = data.RootElement.GetProperty("MqttLOWcmd").GetString();
+                _HTFanCtrl._mqttMEDcmd = data.RootElement.GetProperty("MqttMEDcmd").GetString();
+                _HTFanCtrl._mqttHIGHcmd = data.RootElement.GetProperty("MqttHIGHcmd").GetString();
                 _HTFanCtrl._mediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._mediaPlayerPort = data.RootElement.GetProperty("MediaPlayerPort").GetString();
                 _HTFanCtrl._globalOffsetMS = data.RootElement.GetProperty("GlobalOffset").GetString();
@@ -752,7 +779,7 @@ namespace HTFanControl
                     File.Move(Path.Combine(_HTFanCtrl._rootPath, "windtracks", renameInfo), Path.Combine(_HTFanCtrl._rootPath, "windtracks", _HTFanCtrl._currentVideoFileName + ext), true);
                 }
                 catch { }
-                _HTFanCtrl.ReInitialize(true);
+                _HTFanCtrl.ReInitialize(false);
             }
         }
 
@@ -767,7 +794,7 @@ namespace HTFanControl
                     File.Delete(Path.Combine(_HTFanCtrl._rootPath, "windtracks", deleteInfo));
                 }
                 catch { }
-                _HTFanCtrl.ReInitialize(true);
+                _HTFanCtrl.ReInitialize(false);
             }
         }
 
@@ -789,7 +816,7 @@ namespace HTFanControl
                 }
                 catch { }
 
-                _HTFanCtrl.ReInitialize(true);
+                _HTFanCtrl.ReInitialize(false);
             }
         }
 
@@ -828,7 +855,7 @@ namespace HTFanControl
             _HTFanCtrl._plexClientGUID = data.RootElement.GetProperty("guid").GetString();
 
             _HTFanCtrl.SaveSettings();
-            _HTFanCtrl.ReInitialize(true);
+            _HTFanCtrl.ReInitialize(false);
         }
 
         private string GetAudioDevices(HttpListenerRequest request, string pageName)
@@ -868,7 +895,7 @@ namespace HTFanControl
             _HTFanCtrl._audioDevice = audioDevice;
 
             _HTFanCtrl.SaveSettings();
-            _HTFanCtrl.ReInitialize(true);
+            _HTFanCtrl.ReInitialize(false);
         }
 
         private string LoadedWindTrackData(HttpListenerRequest request, string pageName)
@@ -970,10 +997,8 @@ namespace HTFanControl
         {
             string fanCmdInfo = GetPostBody(request);
 
-            byte[] cmd = Encoding.ASCII.GetBytes($"SEND_ONCE {_HTFanCtrl._lircRemote} {fanCmdInfo}\n");
-
             Console.WriteLine($"Sent CMD: {fanCmdInfo}");
-            _HTFanCtrl.SendToLIRC(cmd);
+            _HTFanCtrl._fanController.SendCMD(fanCmdInfo);
         }
 
         private static string GetPostBody(HttpListenerRequest request)

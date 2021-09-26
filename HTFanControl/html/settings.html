@@ -29,10 +29,19 @@
 
 		function Save()
 		{
-            const data = {
+			const data = {
+                Controller: document.querySelector('input[name="Controller"]:checked').value,
                 LircIP: document.getElementById('LircIP').value,
 				LircPort: document.getElementById('LircPort').value,
-                LircRemote: document.getElementById('LircRemote').value,
+				LircRemote: document.getElementById('LircRemote').value,
+				MqttIP: document.getElementById('MqttIP').value,
+				MqttPort: document.getElementById('MqttPort').value,
+				MqttTopic: document.getElementById('MqttTopic').value,
+				MqttOFFcmd: document.getElementById('MqttOFFcmd').value,
+				MqttECOcmd: document.getElementById('MqttECOcmd').value,
+				MqttLOWcmd: document.getElementById('MqttLOWcmd').value,
+				MqttMEDcmd: document.getElementById('MqttMEDcmd').value,
+                MqttHIGHcmd: document.getElementById('MqttHIGHcmd').value,
                 MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
                 MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
                 GlobalOffset: document.getElementById('GlobalOffset').value,
@@ -61,7 +70,18 @@
 		{
             Save();
             window.location.href = "selectaudiodevice";
-        }
+		}
+
+		function lirc()
+		{
+            document.getElementById('lircDiv').style.display = 'block';
+            document.getElementById('mqttDiv').style.display = 'none';
+		}
+		function mqtt()
+		{
+            document.getElementById('lircDiv').style.display = 'none';
+            document.getElementById('mqttDiv').style.display = 'block';
+		}
 
 		function mpc()
 		{
@@ -106,6 +126,12 @@
 			{
 				document.getElementById('audioDiv').style.display = 'block';
                 document.getElementById('mediaPlayerDiv').style.display = 'none';
+			}
+
+			if (document.getElementById('MQTT').checked)
+			{
+				document.getElementById('mqttDiv').style.display = 'block';
+                document.getElementById('lircDiv').style.display = 'none';
             }
         }
 
@@ -174,12 +200,48 @@
 <h3>Settings</h3>
 <div class="form-row ngroup">
 	<div class="nrow">
-		<div class="nitem" style="flex-grow: 2;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
-		<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="LircPort" value="{LircPort}"></div>
+		<div class="nitem" style="flex-grow: 1;">
+			<b>Fan Control Type</b>
+			<br />
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="Controller" id="LIRC" value="LIRC" onclick="lirc()" {LIRC}>
+				<label class="form-check-label" for="LIRC">LIRC</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="Controller" id="MQTT" value="MQTT" onclick="mqtt()" {MQTT}>
+				<label class="form-check-label" for="MQTT">MQTT</label>
+			</div>
+		</div>
+	</div>
+	<div id="lircDiv">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="text" class="form-control" id="LircPort" value="{LircPort}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>LIRC Remote Name</b><input type="text" class="form-control" id="LircRemote" value="{LircRemote}"></div>
+		</div>
 	</div>
 
-	<div class="nrow">
-		<div class="nitem" style="flex-grow: 1;"><b>LIRC Remote Name</b><input type="text" class="form-control" id="LircRemote" value="{LircRemote}"></div>
+	<div id="mqttDiv" style="display: none; padding-bottom: 5px;">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>MQTT IP</b><input type="text" class="form-control" id="MqttIP" value="{MqttIP}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Port (optional)</b><input type="text" class="form-control" id="MqttPort" value="{MqttPort}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT Topic</b><input type="text" class="form-control" id="MqttTopic" value="{MqttTopic}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT OFF Cmd</b><input type="text" class="form-control" id="MqttOFFcmd" value="{MqttOFFcmd}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT ECO Cmd</b><input type="text" class="form-control" id="MqttECOcmd" value="{MqttECOcmd}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT LOW Cmd</b><input type="text" class="form-control" id="MqttLOWcmd" value="{MqttLOWcmd}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT MED Cmd</b><input type="text" class="form-control" id="MqttMEDcmd" value="{MqttMEDcmd}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT HIGH Cmd</b><input type="text" class="form-control" id="MqttHIGHcmd" value="{MqttHIGHcmd}"></div>
+		</div>
 	</div>
 
 	<div class="nrow">

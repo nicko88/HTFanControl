@@ -71,6 +71,7 @@ namespace HTFanControl
             if (_modelService != null)
             {
                 Console.WriteLine("Stop Listening...");
+                //Log.WriteLine("Stop Listening...");
             }
 
             _state = "";
@@ -110,6 +111,7 @@ namespace HTFanControl
             _blockingCollection = new BlockingCollection<AudioSamples>();
 
             Console.WriteLine("Start Listening...");
+            //Log.WriteLine("Start Listening...");
             _state = "(listening...)";
 
             try
@@ -122,18 +124,20 @@ namespace HTFanControl
         private void FoundMatch(ResultEntry resultEntry)
         {
             _timeJump = false;
-            TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength - resultEntry.QueryMatchStartsAt + 0.625);
+            TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength - resultEntry.QueryMatchStartsAt + 0.65);
 
             if(matchTime > _lastMatchTime.Add(TimeSpan.FromMinutes(5)) || matchTime < _lastMatchTime.Subtract(TimeSpan.FromMinutes(5)))
             {
                 _timeJump = true;
                 _lastMatchTime = matchTime;
                 Console.WriteLine("Time Jump Detected");
+                //Log.WriteLine("Time Jump Detected");
             }
 
             if (!_timeJump)
             {
                 Console.WriteLine($"Match Found: {matchTime:G}");
+                //Log.WriteLine($"Match Found: {matchTime:G}");
                 _hTFanControl._currentVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
                 _hTFanControl.UpdateTime();
                 _lastMatchTime = matchTime;
@@ -165,6 +169,7 @@ namespace HTFanControl
             TimeSpan playerTime = TimeSpan.FromMilliseconds(position);
             string matchResult = $"Accuracy:{audioTime.Subtract(playerTime).TotalMilliseconds} AudioTime:{audioTime:G} PlayerTime:{playerTime:G}";
             Console.WriteLine(matchResult);
+            //Log.WriteLine(matchResult);
         }
 
         //private void Pause(object o)
