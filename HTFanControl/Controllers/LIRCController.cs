@@ -15,35 +15,13 @@ namespace HTFanControl.Controllers
         private Dictionary<string, string> _lircMapping;
         private readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        private string _IP;
-        private string _port;
-        private string _lircRemote;
-        private string _irChannels = "";
+        private Settings _settings;
 
         public string ErrorStatus { get; private set; }
 
-        public LIRCController(string IP, string port, string lircRemote, string irChan1, string irChan2, string irChan3, string irChan4)
+        public LIRCController(Settings settings)
         {
-            _IP = IP;
-            _port = port;
-            _lircRemote = lircRemote;
-
-            if (irChan1 == "true")
-            {
-                _irChannels += "1 ";
-            }
-            if (irChan2 == "true")
-            {
-                _irChannels += "2 ";
-            }
-            if (irChan3 == "true")
-            {
-                _irChannels += "3 ";
-            }
-            if (irChan4 == "true")
-            {
-                _irChannels += "4 ";
-            }
+            _settings = settings;
 
             LoadLIRCMapping();
         }
@@ -62,8 +40,8 @@ namespace HTFanControl.Controllers
 
             try
             {
-                IPAddress ipAddress = IPAddress.Parse(_IP);
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, Convert.ToInt32(_port));
+                IPAddress ipAddress = IPAddress.Parse(_settings.LIRC_IP);
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, _settings.LIRC_Port);
                 _lircSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 IAsyncResult result = _lircSocket.BeginConnect(remoteEP, null, null);
@@ -81,7 +59,7 @@ namespace HTFanControl.Controllers
             }
             catch
             {
-                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to LIRC at: {_IP}:{_port}";
+                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to LIRC at: {_settings.LIRC_IP}:{_settings.LIRC_Port}";
                 return false;
             }
 
@@ -111,10 +89,10 @@ namespace HTFanControl.Controllers
             {
                 if (_lircMapping != null && _lircMapping.TryGetValue(c, out string remote))
                 {
-                    _lircRemote = remote;
+                    _settings.LIRC_Remote = remote;
                 }
 
-                string lircCMD = $"SEND_ONCE {_lircRemote} {c}\n";
+                string lircCMD = $"SEND_ONCE {_settings.LIRC_Remote} {c}\n";
                 goodResult = SendLIRCBytes(Encoding.ASCII.GetBytes(lircCMD));
             }
 
@@ -161,7 +139,7 @@ namespace HTFanControl.Controllers
                 }
                 catch
                 {
-                    ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed sending command to LIRC at: {_IP}:{_port}";
+                    ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed sending command to LIRC at: {_settings.LIRC_IP}:{_settings.LIRC_Port}";
                     return false;
                 }
             }
@@ -173,8 +151,26 @@ namespace HTFanControl.Controllers
         {
             if (ConfigHelper.GetOS() != "win")
             {
-                SendLIRCBytes(Encoding.ASCII.GetBytes($"SET_TRANSMITTERS {_irChannels}\n"));
-                Console.WriteLine($"SET_TRANSMITTERS {_irChannels}\n");
+                string irChannels = "";
+                if (_settings.IR_CHAN1)
+                {
+                    irChannels += "1 ";
+                }
+                if (_settings.IR_CHAN2)
+                {
+                    irChannels += "2 ";
+                }
+                if (_settings.IR_CHAN3)
+                {
+                    irChannels += "3 ";
+                }
+                if (_settings.IR_CHAN4)
+                {
+                    irChannels += "4 ";
+                }
+
+                SendLIRCBytes(Encoding.ASCII.GetBytes($"SET_TRANSMITTERS {irChannels}\n"));
+                Console.WriteLine($"SET_TRANSMITTERS {irChannels}\n");
             }
         }
 

@@ -157,7 +157,7 @@ namespace HTFanControl
             try
             {
                 HttpClient httpClient = new HttpClient();
-                string html = httpClient.GetStringAsync($"http://{_hTFanControl._mediaPlayerIP}:{_hTFanControl._mediaPlayerPort}/variables.html").Result;
+                string html = httpClient.GetStringAsync($"http://{_hTFanControl._settings.MediaPlayerIP}:{_hTFanControl._settings.MediaPlayerPort}/variables.html").Result;
 
                 HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
@@ -182,7 +182,7 @@ namespace HTFanControl
         {
             CancellationToken token = (CancellationToken)cancellationToken;
 
-            ALCaptureDevice captureDevice = ALC.CaptureOpenDevice(_hTFanControl._audioDevice, 11024, ALFormat.Mono16, 10240);
+            ALCaptureDevice captureDevice = ALC.CaptureOpenDevice(_hTFanControl._settings.AudioDevice, 11024, ALFormat.Mono16, 10240);
             {
                 ALC.CaptureStart(captureDevice);
 
@@ -218,7 +218,7 @@ namespace HTFanControl
                         }
                         else
                         {
-                            _hTFanControl._errorStatus = $"Failed to record from audio input device: {_hTFanControl._audioDevice}";
+                            _hTFanControl._errorStatus = $"Failed to record from audio input device: {_hTFanControl._settings.AudioDevice}";
                         }
                     }
                     catch

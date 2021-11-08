@@ -8,24 +8,13 @@ namespace HTFanControl.Controllers
     class MQTTController : IController
     {
         private IMqttClient _mqttClient;
-
-        private string _IP;
-        private string _port;
-        private string _Topic;
-        private string _OFFcmd, _ECOcmd, _LOWcmd, _MEDcmd, _HIGHcmd;
+        private Settings _settings;
 
         public string ErrorStatus { get; private set; }
 
-        public MQTTController(string IP, string port, string topic, string OFFcmd, string ECOcmd, string LOWcmd, string MEDcmd, string HIGHcmd)
+        public MQTTController(Settings settings)
         {
-            _IP = IP;
-            _port = port;
-            _Topic = topic;
-            _OFFcmd = OFFcmd;
-            _ECOcmd = ECOcmd;
-            _LOWcmd = LOWcmd;
-            _MEDcmd = MEDcmd;
-            _HIGHcmd = HIGHcmd;
+            _settings = settings;
         }
 
         public bool Connect()
@@ -46,13 +35,13 @@ namespace HTFanControl.Controllers
                 _mqttClient = factory.CreateMqttClient();
 
                 int? port = null;
-                if (!string.IsNullOrEmpty(_port))
+                if (_settings.MQTT_Port != 0)
                 {
-                    port = Convert.ToInt32(_port);
+                    port = _settings.MQTT_Port;
                 }
 
                 IMqttClientOptions options = new MqttClientOptionsBuilder()
-                    .WithTcpServer(_IP, port)
+                    .WithTcpServer(_settings.MQTT_IP, port)
                     .Build();
 
                 IAsyncResult result = _mqttClient.ConnectAsync(options);
@@ -60,13 +49,13 @@ namespace HTFanControl.Controllers
 
                 if(!_mqttClient.IsConnected)
                 {
-                    ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed to connect to MQTT broker at: {_IP}:{_port}";
+                    ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed to connect to MQTT broker at: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                     return false;
                 }
             }
             catch
             {
-                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to MQTT broker at: {_IP}:{_port}";
+                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to MQTT broker at: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                 return false;
             }
 
@@ -80,21 +69,30 @@ namespace HTFanControl.Controllers
                 Connect();
             }
 
-            string mqttCMD = cmd switch
+            string mqttTopic = cmd switch
             {
-                "OFF" => _OFFcmd,
-                "ECO" => _ECOcmd,
-                "LOW" => _LOWcmd,
-                "MED" => _MEDcmd,
-                "HIGH" => _HIGHcmd,
-                _ => _OFFcmd,
+                "OFF" => _settings.MQTT_OFF_Topic,
+                "ECO" => _settings.MQTT_ECO_Topic,
+                "LOW" => _settings.MQTT_LOW_Topic,
+                "MED" => _settings.MQTT_MED_Topic,
+                "HIGH" => _settings.MQTT_HIGH_Topic,
+                _ => _settings.MQTT_OFF_Topic,
+            };
+            string mqttPayload = cmd switch
+            {
+                "OFF" => _settings.MQTT_OFF_Payload,
+                "ECO" => _settings.MQTT_ECO_Payload,
+                "LOW" => _settings.MQTT_LOW_Payload,
+                "MED" => _settings.MQTT_MED_Payload,
+                "HIGH" => _settings.MQTT_HIGH_Payload,
+                _ => _settings.MQTT_OFF_Payload,
             };
 
             try
             {
                 MqttApplicationMessage message = new MqttApplicationMessageBuilder()
-                    .WithTopic(_Topic)
-                    .WithPayload(mqttCMD)
+                    .WithTopic(mqttTopic)
+                    .WithPayload(mqttPayload)
                     .Build();
 
                 IAsyncResult result = _mqttClient.PublishAsync(message);
@@ -102,7 +100,7 @@ namespace HTFanControl.Controllers
             }
             catch
             {
-                ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed sending Topic: ""{_Topic}"" and Payload: ""{mqttCMD}"" To: {_IP}:{_port}";
+                ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed sending Topic: ""{mqttTopic}"" and Payload: ""{mqttPayload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                 return false;
             }
 

@@ -6,9 +6,11 @@
 	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
 	<Configurations>Debug;ReleaseWin;ReleaseLinux</Configurations>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
-    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.1.0</AssemblyVersion>
+    <FileVersion>0.1.1.0</FileVersion>
+    <Version>0.1.1</Version>
+    <Description>4D Theater Wind Effect - DIY Home Theater Project</Description>
+    <Copyright>nicko88</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLinux|AnyCPU'">
@@ -18,6 +20,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -47,7 +50,6 @@
     <None Remove="html\selectplexplayer.html" />
     <None Remove="html\selectvideo.html" />
     <None Remove="html\settings.html" />
-    <None Remove="html\settingslinux.html" />
     <None Remove="html\status.html" />
   </ItemGroup>
 
@@ -64,16 +66,15 @@
     <EmbeddedResource Include="html\manage.html" />
     <EmbeddedResource Include="html\downloadlist.html" />
     <EmbeddedResource Include="html\raspiwifi.html" />
-    <EmbeddedResource Include="html\settingslinux.html" />
+    <EmbeddedResource Include="html\settings.html" />
     <EmbeddedResource Include="html\selectvideo.html" />
     <EmbeddedResource Include="html\status.html" />
-    <EmbeddedResource Include="html\settings.html" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.36" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.37" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="MQTTnet" Version="3.0.16" />
+    <PackageReference Include="MQTTnet" Version="3.0.17" />
     <PackageReference Include="OpenTK.OpenAL" Version="4.6.7" />
     <PackageReference Include="SoundFingerprinting" Version="7.9.6" />
     <PackageReference Include="SoundFingerprinting.Emy" Version="7.9.6" />

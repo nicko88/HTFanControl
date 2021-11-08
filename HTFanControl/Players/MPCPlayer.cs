@@ -11,8 +11,7 @@ namespace HTFanControl
     {
         private HttpClient _httpClient;
 
-        private string _IP;
-        private string _port;
+        private Settings _settings;
 
         public bool IsPlaying { get; private set; }
         public long VideoTime { get; private set; }
@@ -21,11 +20,11 @@ namespace HTFanControl
         public string ErrorStatus { get; private set; }
         public int VideoTimeResolution { get; private set; }
 
-        public MPCPlayer(string IP, string port)
+        public MPCPlayer(Settings settings)
         {
             VideoTimeResolution = 50;
-            _IP = IP;
-            _port = port;
+
+            _settings = settings;
 
             _httpClient = new HttpClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(1);
@@ -35,7 +34,7 @@ namespace HTFanControl
         {
             try
             {
-                string html = _httpClient.GetStringAsync($"http://{_IP}:{_port}/variables.html").Result;
+                string html = _httpClient.GetStringAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/variables.html").Result;
 
                 HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
@@ -62,7 +61,7 @@ namespace HTFanControl
             }
             catch
             {
-                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to MPC at: {_IP}:{_port}";
+                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to MPC at: {_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}";
                 return false;
             }
 
@@ -76,7 +75,7 @@ namespace HTFanControl
             HttpClient httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(1);
 
-            string filenameJSONResponse = httpClient.PostAsync($"http://{_IP}:8080/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
+            string filenameJSONResponse = httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:8080/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
             
             using JsonDocument fileInfoJSON = JsonDocument.Parse(filenameJSONResponse);
             string kodiFile = fileInfoJSON.RootElement.GetProperty("result").GetProperty("item").GetProperty("file").GetString();

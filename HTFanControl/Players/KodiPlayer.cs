@@ -11,9 +11,7 @@ namespace HTFanControl
     {
         private HttpClient _httpClient;
 
-        private string _IP;
-        private string _port;
-        private bool _externalMPC;
+        private Settings _settings;
 
         public bool IsPlaying { get; private set; }
         public long VideoTime { get; private set; }
@@ -22,12 +20,11 @@ namespace HTFanControl
         public string ErrorStatus { get; private set; }
         public int VideoTimeResolution { get; private set; }
 
-        public KodiPlayer(string IP, string port, bool externalMPC)
+        public KodiPlayer(Settings settings)
         {
             VideoTimeResolution = 50;
-            _IP = IP;
-            _port = port;
-            _externalMPC = externalMPC;
+
+            _settings = settings;
 
             _httpClient = new HttpClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(1);
@@ -38,7 +35,7 @@ namespace HTFanControl
             try
             {
                 StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }", System.Text.Encoding.UTF8, "application/json");
-                string filenameJSONResponse = _httpClient.PostAsync($"http://{_IP}:{_port}/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
+                string filenameJSONResponse = _httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
 
                 using JsonDocument fileInfoJSON = JsonDocument.Parse(filenameJSONResponse);
                 string filePath = fileInfoJSON.RootElement.GetProperty("result").GetProperty("item").GetProperty("file").GetString();
@@ -49,11 +46,11 @@ namespace HTFanControl
 
                 bool getKodiTime = true;
 
-                if (_externalMPC)
+                if (_settings.MediaPlayerType == "KodiMPC")
                 {
                     try
                     {
-                        string html = _httpClient.GetStringAsync($"http://{_IP}:13579/variables.html").Result;
+                        string html = _httpClient.GetStringAsync($"http://{_settings.MediaPlayerIP}:13579/variables.html").Result;
 
                         HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                         doc.LoadHtml(html);
@@ -77,7 +74,7 @@ namespace HTFanControl
                 if (getKodiTime)
                 {
                     StringContent timeJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetProperties"", ""params"": {""properties"": [""time"", ""speed""], ""playerid"": 1}, ""id"": 1}", System.Text.Encoding.UTF8, "application/json");
-                    string timeJSONResponse = _httpClient.PostAsync($"http://{_IP}:{_port}/jsonrpc", timeJSONRequest).Result.Content.ReadAsStringAsync().Result;
+                    string timeJSONResponse = _httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/jsonrpc", timeJSONRequest).Result.Content.ReadAsStringAsync().Result;
 
                     using JsonDocument time = JsonDocument.Parse(timeJSONResponse);
                     long hours = time.RootElement.GetProperty("result").GetProperty("time").GetProperty("hours").GetInt64();
@@ -102,7 +99,7 @@ namespace HTFanControl
             }
             catch
             {
-                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to Kodi at: {_IP}:{_port}";
+                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to Kodi at: {_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}";
                 return false;
             }
 

@@ -13,7 +13,8 @@ namespace HTFanControl
 {
     class HTFanControl
     {
-        private string _OS = ConfigHelper.GetOS();
+        public readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+
         public string _errorStatus;
         public string _windtrackError;
         public long _currentVideoTime = 0;
@@ -27,51 +28,20 @@ namespace HTFanControl
         public double _offset = 0;
         public bool _offsetEnabled = false;
 
-        public readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-
         public List<Tuple<TimeSpan, string>> _videoTimeCodes;
-
-        public string _mediaPlayerType = "MPC";
-        public string _mediaPlayerIP = "127.0.0.1";
-        public string _mediaPlayerPort = "13579";
-        public string _controllerType = "LIRC";
-        public string _lircIP = "127.0.0.1";
-        public string _lircPort = "8765";
-        public string _lircRemote = "EHF10127B";
-        public string _mqttIP;
-        public string _mqttPort;
-        public string _mqttTopic;
-        public string _mqttOFFcmd;
-        public string _mqttECOcmd;
-        public string _mqttLOWcmd;
-        public string _mqttMEDcmd;
-        public string _mqttHIGHcmd;
-        public string _audioDevice;
-        public string _PlexToken;
-        public string _plexClientName;
-        public string _plexClientIP;
-        public string _plexClientPort;
-        public string _plexClientGUID;
-        public string _globalOffsetMS = "2500";
-        public string _spinupOffsetMS = "1500";
-        public string _spindownOffsetMS = "0";
-        public string _irChan1 = "true";
-        public string _irChan2 = "false";
-        public string _irChan3 = "false";
-        public string _irChan4 = "false";
 
         private PositionTimer _videoTimer;
         private readonly Timer _syncTimer;
         private IPlayer _mediaPlayer;
-
         public AudioSync _audioSync;
-
         public IController _fanController;
+
+        public Settings _settings;
 
         public HTFanControl()
         {
-            LoadSettings();
-            SaveSettings();
+            _settings = Settings.LoadSettings();
+            Settings.SaveSettings(_settings);
 
             _syncTimer = new Timer(SyncTimerTick, null, Timeout.Infinite, Timeout.Infinite);
             SelectSyncSource();
@@ -90,7 +60,7 @@ namespace HTFanControl
             _nextCmdIndex = 0;
             _isPlaying = false;
 
-            if (_mediaPlayerType == "Audio")
+            if (_settings.MediaPlayerType == "Audio")
             {
                 _audioSync?.Stop();
             }
@@ -103,153 +73,13 @@ namespace HTFanControl
             }
         }
 
-        private void LoadSettings()
-        {
-            try
-            {
-                string[] settingsFile = File.ReadAllLines(Path.Combine(_rootPath, "HTFanControlSettings.txt"));
-                Dictionary<string, string> settings = settingsFile.ToDictionary(x => x.Split('=')[0], x => x.Split('=')[1]);
-
-                if (!settings.TryGetValue("MediaPlayer", out _mediaPlayerType))
-                {
-                    _mediaPlayerType = "MPC";
-                }
-                if(!settings.TryGetValue("MediaPlayerIP", out _mediaPlayerIP))
-                {
-                    _mediaPlayerIP = "127.0.0.1";
-                }
-                if(!settings.TryGetValue("MediaPlayerPort", out _mediaPlayerPort))
-                {
-                    _mediaPlayerPort = "13579";
-                }
-                if (!settings.TryGetValue("Controller", out _controllerType))
-                {
-                    _controllerType = "LIRC";
-                }
-                if (!settings.TryGetValue("LircIP", out _lircIP))
-                {
-                    _lircIP = "127.0.0.1";
-                }
-                if(!settings.TryGetValue("LircPort", out _lircPort))
-                {
-                    _lircPort = "8765";
-                }
-                if (!settings.TryGetValue("LircRemote", out _lircRemote))
-                {
-                    _lircRemote = "EHF10127B";
-                }
-
-                settings.TryGetValue("MqttIP", out _mqttIP);
-                settings.TryGetValue("MqttPort", out _mqttPort);
-                settings.TryGetValue("MqttTopic", out _mqttTopic);
-                settings.TryGetValue("MqttOFFcmd", out _mqttOFFcmd);
-                settings.TryGetValue("MqttECOcmd", out _mqttECOcmd);
-                settings.TryGetValue("MqttLOWcmd", out _mqttLOWcmd);
-                settings.TryGetValue("MqttMEDcmd", out _mqttMEDcmd);
-                settings.TryGetValue("MqttHIGHcmd", out _mqttHIGHcmd);
-
-                settings.TryGetValue("AudioDevice", out _audioDevice);
-
-                settings.TryGetValue("PlexToken", out _PlexToken);
-                settings.TryGetValue("PlexClientName", out _plexClientName);
-                settings.TryGetValue("PlexClientIP", out _plexClientIP);
-                settings.TryGetValue("PlexClientPort", out _plexClientPort);
-                settings.TryGetValue("PlexClientGUID", out _plexClientGUID);
-
-                if (!settings.TryGetValue("GlobalOffsetMS", out _globalOffsetMS))
-                {
-                    _globalOffsetMS = "2500";
-                }
-                if(!settings.TryGetValue("SpinupOffsetMS", out _spinupOffsetMS))
-                {
-                    _spinupOffsetMS = "1500";
-                }
-                if (!settings.TryGetValue("SpindownOffsetMS", out _spindownOffsetMS))
-                {
-                    _spindownOffsetMS = "0";
-                }
-
-                if (_OS != "win")
-                {
-                    if(!settings.TryGetValue("IRChan1", out _irChan1))
-                    {
-                        _irChan1 = "true";
-                    }
-                    if(!settings.TryGetValue("IRChan2", out _irChan2))
-                    {
-                        _irChan2 = "false";
-                    }
-                    if(!settings.TryGetValue("IRChan3", out _irChan3))
-                    {
-                        _irChan3 = "false";
-                    }
-                    if(!settings.TryGetValue("IRChan4", out _irChan4))
-                    {
-                        _irChan4 = "false";
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                _errorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed to load settings.\n\n{e.Message}";
-            }
-        }
-
-        public void SaveSettings()
-        {
-            try
-            {
-                List<string> settings = new List<string>
-                {
-                    "MediaPlayer=" + _mediaPlayerType,
-                    "MediaPlayerIP=" + _mediaPlayerIP,
-                    "MediaPlayerPort=" + _mediaPlayerPort,
-                    "Controller=" + _controllerType,
-                    "LircIP=" + _lircIP,
-                    "LircPort=" + _lircPort,
-                    "LircRemote=" + _lircRemote,
-                    "MqttIP=" + _mqttIP,
-                    "MqttPort=" + _mqttPort,
-                    "MqttTopic=" + _mqttTopic,
-                    "MqttOFFcmd=" + _mqttOFFcmd,
-                    "MqttECOcmd=" + _mqttECOcmd,
-                    "MqttLOWcmd=" + _mqttLOWcmd,
-                    "MqttMEDcmd=" + _mqttMEDcmd,
-                    "MqttHIGHcmd=" + _mqttHIGHcmd,
-                    "AudioDevice=" + _audioDevice,
-                    "PlexToken=" + _PlexToken,
-                    "PlexClientName=" + _plexClientName,
-                    "PlexClientIP=" + _plexClientIP,
-                    "PlexClientPort=" + _plexClientPort,
-                    "PlexClientGUID=" + _plexClientGUID,
-                    "GlobalOffsetMS=" + _globalOffsetMS,
-                    "SpinupOffsetMS=" + _spinupOffsetMS,
-                    "SpindownOffsetMS=" + _spindownOffsetMS
-                };
-
-                if (_OS != "win")
-                {
-                    settings.Add("IRChan1=" + _irChan1);
-                    settings.Add("IRChan2=" + _irChan2);
-                    settings.Add("IRChan3=" + _irChan3);
-                    settings.Add("IRChan4=" + _irChan4);
-                }
-
-                File.WriteAllLines(Path.Combine(_rootPath, "HTFanControlSettings.txt"), settings);
-            }
-            catch (Exception e)
-            {
-                _errorStatus = $"({DateTime.Now:h:mm:ss tt}) Failed to save settings.\n\n{e.Message}";
-            }
-        }
-
         private void SelectController()
         {
-            _fanController = _controllerType switch
+            _fanController = _settings.ControllerType switch
             {
-                "LIRC" => new LIRCController(_lircIP, _lircPort, _lircRemote, _irChan1, _irChan2, _irChan3, _irChan4),
-                "MQTT" => new MQTTController(_mqttIP, _mqttPort, _mqttTopic, _mqttOFFcmd, _mqttECOcmd, _mqttLOWcmd, _mqttMEDcmd, _mqttHIGHcmd),
-                _ => new LIRCController(_lircIP, _lircPort, _lircRemote, _irChan1, _irChan2, _irChan3, _irChan4),
+                "LIRC" => new LIRCController(_settings),
+                "MQTT" => new MQTTController(_settings),
+                _ => new LIRCController(_settings),
             };
 
             if(!_fanController.Connect())
@@ -260,20 +90,20 @@ namespace HTFanControl
 
         private void SelectSyncSource()
         {
-            if (_mediaPlayerType == "Audio")
+            if (_settings.MediaPlayerType == "Audio")
             {
                 _audioSync = new AudioSync(this);
                 _syncTimer.Change(Timeout.Infinite, Timeout.Infinite);
             }
             else
             {
-                _mediaPlayer = _mediaPlayerType switch
+                _mediaPlayer = _settings.MediaPlayerType switch
                 {
-                    "MPC" => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
-                    "Kodi" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, false),
-                    "KodiMPC" => new KodiPlayer(_mediaPlayerIP, _mediaPlayerPort, true),
-                    "Plex" => new PlexPlayer(_mediaPlayerIP, _mediaPlayerPort, _PlexToken, _plexClientIP, _plexClientPort, _plexClientGUID, _plexClientName),
-                    _ => new MPCPlayer(_mediaPlayerIP, _mediaPlayerPort),
+                    "MPC" => new MPCPlayer(_settings),
+                    "Kodi" => new KodiPlayer(_settings),
+                    "KodiMPC" => new KodiPlayer(_settings),
+                    "Plex" => new PlexPlayer(_settings),
+                    _ => new MPCPlayer(_settings),
                 };
 
                 _syncTimer.Change(1000, Timeout.Infinite);
@@ -400,7 +230,7 @@ namespace HTFanControl
                 }
             }
 
-            if (_mediaPlayerType != "Audio")
+            if (_settings.MediaPlayerType != "Audio")
             {
                 _syncTimer.Change(1000, Timeout.Infinite);
             }
@@ -523,9 +353,6 @@ namespace HTFanControl
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
                 bool verifyOrder = true;
-                double globalOffsetMS = Convert.ToDouble(_globalOffsetMS);
-                double spinupOffsetMS = Convert.ToDouble(_spinupOffsetMS);
-                double spindownOffsetMS = Convert.ToDouble(_spindownOffsetMS);
 
                 for (int i = 0; i < lines.Length; i++)
                 {
@@ -573,7 +400,7 @@ namespace HTFanControl
                         {
                             if (isFanCmd)
                             {
-                                timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds - globalOffsetMS;
+                                timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds - _settings.GlobalOffsetMS;
                             }
                             else
                             {
@@ -610,12 +437,12 @@ namespace HTFanControl
                                 //if command comes after OFF, add spinup offset
                                 if (lastCmd.Contains("OFF"))
                                 {
-                                    timeCode -= spinupOffsetMS;
+                                    timeCode -= _settings.SpinupOffsetMS;
                                 }
                                 //if command is OFF, add spindown offset
                                 else if (lineData[1].Contains("OFF"))
                                 {
-                                    timeCode -= spindownOffsetMS;
+                                    timeCode -= _settings.SpindownOffsetMS;
                                 }
                                 //if offset makes timecode invalid, fix it
                                 if (timeCode < actualPrevTime + 500)

@@ -12,13 +12,7 @@ namespace HTFanControl
     {
         private HttpClient _httpClient;
 
-        private string _serverIP;
-        private string _serverPort;
-        private string _serverToken;
-        private string _playerIP;
-        private string _playerPort;
-        private string _playerGUID;
-        private string _playerName;
+        private Settings _settings;
 
         public bool IsPlaying { get; private set; }
         public long VideoTime { get; private set; }
@@ -29,31 +23,25 @@ namespace HTFanControl
 
         private string _pollingType = "1";
 
-        public PlexPlayer(string serverIP, string serverPort, string serverToken, string playerIP, string playerPort, string playerGUID, string playerName)
+        public PlexPlayer(Settings settings)
         {
             VideoTimeResolution = 1000;
 
-            _serverIP = serverIP;
-            _serverPort = serverPort;
-            _serverToken = serverToken;
-            _playerIP = playerIP;
-            _playerPort = playerPort;
-            _playerGUID = playerGUID;
-            _playerName = playerName;
+            _settings = settings;
 
             _httpClient = new HttpClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
             _httpClient.DefaultRequestHeaders.Add("X-Plex-Client-Identifier", "HTFanControl");
             _httpClient.DefaultRequestHeaders.Add("X-Plex-Device-Name", "HTFanControl");
-            _httpClient.DefaultRequestHeaders.Add("X-Plex-Target-Client-Identifier", _playerGUID);
+            _httpClient.DefaultRequestHeaders.Add("X-Plex-Target-Client-Identifier", _settings.PlexClientGUID);
         }
 
         public bool Update()
         {
             try
             {
-                using Stream timeStream = _httpClient.GetAsync($"http://{_playerIP}:{_playerPort}/player/timeline/poll?wait={_pollingType}&protocol=http&port=5501").Result.Content.ReadAsStreamAsync().Result;
+                using Stream timeStream = _httpClient.GetAsync($"http://{_settings.PlexClientIP}:{_settings.PlexClientPort}/player/timeline/poll?wait={_pollingType}&protocol=http&port=5501").Result.Content.ReadAsStreamAsync().Result;
                 _pollingType = "0";
                 XDocument timeXML = XDocument.Load(timeStream);
                 XElement video = timeXML.Descendants("Timeline").Where(x => x.Attribute("type").Value == "video").First();
@@ -63,7 +51,7 @@ namespace HTFanControl
                 string state = video.Attribute("state").Value;
                 string fileKey = video.Attribute("ratingKey").Value;
 
-                using Stream fileStream = _httpClient.GetAsync($"http://{_serverIP}:{_serverPort}/library/metadata/{fileKey}?X-Plex-Token={_serverToken}").Result.Content.ReadAsStreamAsync().Result;
+                using Stream fileStream = _httpClient.GetAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/library/metadata/{fileKey}?X-Plex-Token={_settings.PlexToken}").Result.Content.ReadAsStreamAsync().Result;
                 XDocument fileXML = XDocument.Load(fileStream);
                 XElement media = fileXML.Descendants("MediaContainer").Descendants("Video").Descendants("Media").Descendants("Part").First();
 
@@ -81,7 +69,7 @@ namespace HTFanControl
             }
             catch
             {
-                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to Plex Player: {_playerName}";
+                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to Plex Player: {_settings.PlexClientName}";
                 _pollingType = "1";
                 return false;
             }

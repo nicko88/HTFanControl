@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace HTFanControl
 {
     class Program
     {
+        private static string _rootDir = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
         static void Main(string[] args)
         {
-            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Length > 1)
+            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1)
             {
                 Process.GetCurrentProcess().Kill();
             }
@@ -19,18 +22,18 @@ namespace HTFanControl
             {
                 ConfigHelper.SetupWin();
 #if (RELEASE || DEBUG) 
-                System.Threading.Tasks.Task.Factory.StartNew(() => new FanTrayIcon.TrayIcon(ConfigHelper.GetIP()));
+                Task.Factory.StartNew(() => new FanTrayIcon.TrayIcon(ConfigHelper.GetIP()));
 #endif
             }
 
-            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks")))
+            if (!Directory.Exists(Path.Combine(_rootDir, "windtracks")))
             {
-                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "windtracks"));
+                Directory.CreateDirectory(Path.Combine(_rootDir, "windtracks"));
             }
 
-            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "tmp")))
+            if (!Directory.Exists(Path.Combine(_rootDir, "tmp")))
             {
-                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "tmp"));
+                Directory.CreateDirectory(Path.Combine(_rootDir, "tmp"));
             }
 
             Console.WriteLine("http://" + ConfigHelper.GetIP() + ":5500");
@@ -42,13 +45,13 @@ namespace HTFanControl
         {
             Exception ex = e.ExceptionObject as Exception;
 
-            if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "crashlogs")))
+            if (!Directory.Exists(Path.Combine(_rootDir, "crashlogs")))
             {
-                Directory.CreateDirectory(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "crashlogs"));
+                Directory.CreateDirectory(Path.Combine(_rootDir, "crashlogs"));
             }
 
             string crash = ex.Message + "\n\n" + ex.InnerException + "\n\n" + ex.Source + "\n\n" + ex.StackTrace;
-            File.WriteAllText(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "crashlogs", DateTime.Now.ToString("MM.dd.yy-hh.mm-tt") + ".txt"), crash);
+            File.WriteAllText(Path.Combine(_rootDir, "crashlogs", DateTime.Now.ToString("MM.dd.yy-hh.mm-tt") + ".txt"), crash);
         }
     }
 }

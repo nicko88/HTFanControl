@@ -211,7 +211,7 @@ namespace HTFanControl
                 html = html.Replace("{status}", "Fans Disabled");
             }
 
-            if(_HTFanCtrl._mediaPlayerType == "Audio")
+            if(_HTFanCtrl._settings.MediaPlayerType == "Audio")
             {
                 html = html.Replace("{reloadbtn}", "Stop Audio Sync");
             }
@@ -228,7 +228,7 @@ namespace HTFanControl
         private string GetStatusData(HttpListenerRequest request, string pageName)
         {
             string timeMsg = "Current time: ";
-            if (_HTFanCtrl._mediaPlayerType == "Audio")
+            if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
             {
                 timeMsg = "Last time match: ";
             }
@@ -238,7 +238,7 @@ namespace HTFanControl
             if (_HTFanCtrl != null)
             {
                 htmlData.AppendLine(GetCurrentMovie(request, pageName));
-                if(_HTFanCtrl._mediaPlayerType == "Audio")
+                if(_HTFanCtrl._settings.MediaPlayerType == "Audio")
                 {
                     htmlData.AppendLine("<br />");
                     htmlData.AppendLine("<button onclick=\"window.location.href = 'selectvideo';\" class=\"btn btn-primary\">Select Video</button>");
@@ -255,7 +255,7 @@ namespace HTFanControl
                     htmlData.AppendLine("<br />");
                     htmlData.AppendLine("<button onclick=\"window.location.href = 'loadedwindtrack';\" class=\"btn btn-primary\">View Wind Track</button>");
 
-                    if (_HTFanCtrl._hasOffset && _HTFanCtrl._mediaPlayerType != "Audio")
+                    if (_HTFanCtrl._hasOffset && _HTFanCtrl._settings.MediaPlayerType != "Audio")
                     {
                         if (_HTFanCtrl._offsetEnabled)
                         {
@@ -332,39 +332,45 @@ namespace HTFanControl
                 _waitForFile = false;
             }
 
-            string html;
+            string html = GetHtml("settings");
+
             if (ConfigHelper.GetOS() == "win")
             {
-                html = GetHtml("settings");
+                html = html.Replace("{showlinux}", "none");
             }
             else
             {
-                html = GetHtml("settingslinux");
+                html = html.Replace("{showlinux}", "initial");
             }
 
-            if (_HTFanCtrl._controllerType == "LIRC")
+            if (_HTFanCtrl._settings.ControllerType == "LIRC")
             {
                 html = html.Replace("{LIRC}", "checked");
             }
-            else if (_HTFanCtrl._controllerType == "MQTT")
+            else if (_HTFanCtrl._settings.ControllerType == "MQTT")
             {
                 html = html.Replace("{MQTT}", "checked");
             }
 
-            html = html.Replace("{LircIP}", _HTFanCtrl._lircIP);
-            html = html.Replace("{LircPort}", _HTFanCtrl._lircPort);
-            html = html.Replace("{LircRemote}", _HTFanCtrl._lircRemote);
+            html = html.Replace("{LircIP}", _HTFanCtrl._settings.LIRC_IP);
+            html = html.Replace("{LircPort}", _HTFanCtrl._settings.LIRC_Port.ToString());
+            html = html.Replace("{LircRemote}", _HTFanCtrl._settings.LIRC_Remote);
 
-            html = html.Replace("{MqttIP}", _HTFanCtrl._mqttIP);
-            html = html.Replace("{MqttPort}", _HTFanCtrl._mqttPort);
-            html = html.Replace("{MqttTopic}", _HTFanCtrl._mqttTopic);
-            html = html.Replace("{MqttOFFcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttOFFcmd));
-            html = html.Replace("{MqttECOcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttECOcmd));
-            html = html.Replace("{MqttLOWcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttLOWcmd));
-            html = html.Replace("{MqttMEDcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttMEDcmd));
-            html = html.Replace("{MqttHIGHcmd}", HttpUtility.HtmlEncode(_HTFanCtrl._mqttHIGHcmd));
+            html = html.Replace("{MqttIP}", _HTFanCtrl._settings.MQTT_IP);
+            html = html.Replace("{MqttPort}", _HTFanCtrl._settings.MQTT_Port.ToString());
 
-            if (_HTFanCtrl._mediaPlayerType == "MPC")
+            html = html.Replace("{MqttOFFtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Topic));
+            html = html.Replace("{MqttOFFpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Payload));
+            html = html.Replace("{MqttECOtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ECO_Topic));
+            html = html.Replace("{MqttECOpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ECO_Payload));
+            html = html.Replace("{MqttLOWtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_LOW_Topic));
+            html = html.Replace("{MqttLOWpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_LOW_Payload));
+            html = html.Replace("{MqttMEDtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_MED_Topic));
+            html = html.Replace("{MqttMEDpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_MED_Payload));
+            html = html.Replace("{MqttHIGHtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_HIGH_Topic));
+            html = html.Replace("{MqttHIGHpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_HIGH_Payload));
+
+            if (_HTFanCtrl._settings.MediaPlayerType == "MPC")
             {
                 html = html.Replace("{MPC}", "checked");
                 html = html.Replace("{Kodi}", "");
@@ -372,7 +378,7 @@ namespace HTFanControl
                 html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "MPC-HC/BE IP");
             }
-            else if (_HTFanCtrl._mediaPlayerType.Contains("Kodi"))
+            else if (_HTFanCtrl._settings.MediaPlayerType.Contains("Kodi"))
             {
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "checked");
@@ -380,7 +386,7 @@ namespace HTFanControl
                 html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "Kodi IP");
             }
-            else if (_HTFanCtrl._mediaPlayerType == "Plex")
+            else if (_HTFanCtrl._settings.MediaPlayerType == "Plex")
             {
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "");
@@ -388,7 +394,7 @@ namespace HTFanControl
                 html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "Plex Media Server IP");
             }
-            else if (_HTFanCtrl._mediaPlayerType == "Audio")
+            else if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
             {
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "");
@@ -396,36 +402,36 @@ namespace HTFanControl
                 html = html.Replace("{Audio}", "checked");
             }
 
-            html = html.Replace("{MediaPlayerIP}", _HTFanCtrl._mediaPlayerIP);
-            html = html.Replace("{MediaPlayerPort}", _HTFanCtrl._mediaPlayerPort);
+            html = html.Replace("{MediaPlayerIP}", _HTFanCtrl._settings.MediaPlayerIP);
+            html = html.Replace("{MediaPlayerPort}", _HTFanCtrl._settings.MediaPlayerPort.ToString());
 
-            html = html.Replace("{PlexToken}", _HTFanCtrl._PlexToken);
+            html = html.Replace("{PlexToken}", _HTFanCtrl._settings.PlexToken);
 
-            if (string.IsNullOrEmpty(_HTFanCtrl._plexClientName))
+            if (string.IsNullOrEmpty(_HTFanCtrl._settings.PlexClientName))
             {
                 html = html.Replace("{PlexPlayer}", "None");
             }
             else
             {
-                html = html.Replace("{PlexPlayer}", $"{_HTFanCtrl._plexClientName} ({_HTFanCtrl._plexClientIP})");
+                html = html.Replace("{PlexPlayer}", $"{_HTFanCtrl._settings.PlexClientName} ({_HTFanCtrl._settings.PlexClientIP})");
             }
 
-            if (string.IsNullOrEmpty(_HTFanCtrl._audioDevice))
+            if (string.IsNullOrEmpty(_HTFanCtrl._settings.AudioDevice))
             {
                 html = html.Replace("{AudioDevice}", "None");
             }
             else
             {
-                html = html.Replace("{AudioDevice}", $"{_HTFanCtrl._audioDevice}");
+                html = html.Replace("{AudioDevice}", $"{_HTFanCtrl._settings.AudioDevice}");
             }
 
-            html = html.Replace("{GlobalOffset}", _HTFanCtrl._globalOffsetMS.ToString());
-            html = html.Replace("{SpinupOffset}", _HTFanCtrl._spinupOffsetMS.ToString());
-            html = html.Replace("{SpindownOffset}", _HTFanCtrl._spindownOffsetMS.ToString());
+            html = html.Replace("{GlobalOffset}", _HTFanCtrl._settings.GlobalOffsetMS.ToString());
+            html = html.Replace("{SpinupOffset}", _HTFanCtrl._settings.SpinupOffsetMS.ToString());
+            html = html.Replace("{SpindownOffset}", _HTFanCtrl._settings.SpindownOffsetMS.ToString());
 
             if (ConfigHelper.GetOS() != "win")
             {
-                if(_HTFanCtrl._irChan1 == "true")
+                if(_HTFanCtrl._settings.IR_CHAN1)
                 {
                     html = html.Replace("{IRChan1}", "checked");
                 }
@@ -433,7 +439,7 @@ namespace HTFanControl
                 {
                     html = html.Replace("{IRChan1}", "");
                 }
-                if (_HTFanCtrl._irChan2 == "true")
+                if (_HTFanCtrl._settings.IR_CHAN2)
                 {
                     html = html.Replace("{IRChan2}", "checked");
                 }
@@ -441,7 +447,7 @@ namespace HTFanControl
                 {
                     html = html.Replace("{IRChan2}", "");
                 }
-                if (_HTFanCtrl._irChan3 == "true")
+                if (_HTFanCtrl._settings.IR_CHAN3)
                 {
                     html = html.Replace("{IRChan3}", "checked");
                 }
@@ -449,7 +455,7 @@ namespace HTFanControl
                 {
                     html = html.Replace("{IRChan3}", "");
                 }
-                if (_HTFanCtrl._irChan4 == "true")
+                if (_HTFanCtrl._settings.IR_CHAN4)
                 {
                     html = html.Replace("{IRChan4}", "checked");
                 }
@@ -472,35 +478,39 @@ namespace HTFanControl
             {
                 using JsonDocument data = JsonDocument.Parse(settingsInfoJSON);
 
-                _HTFanCtrl._controllerType = data.RootElement.GetProperty("Controller").GetString();
-                _HTFanCtrl._lircIP = data.RootElement.GetProperty("LircIP").GetString();
-                _HTFanCtrl._lircPort = data.RootElement.GetProperty("LircPort").GetString();
-                _HTFanCtrl._lircRemote = data.RootElement.GetProperty("LircRemote").GetString();
-                _HTFanCtrl._mqttIP = data.RootElement.GetProperty("MqttIP").GetString();
-                _HTFanCtrl._mqttPort = data.RootElement.GetProperty("MqttPort").GetString();
-                _HTFanCtrl._mqttTopic = data.RootElement.GetProperty("MqttTopic").GetString();
-                _HTFanCtrl._mqttOFFcmd = data.RootElement.GetProperty("MqttOFFcmd").GetString();
-                _HTFanCtrl._mqttECOcmd = data.RootElement.GetProperty("MqttECOcmd").GetString();
-                _HTFanCtrl._mqttLOWcmd = data.RootElement.GetProperty("MqttLOWcmd").GetString();
-                _HTFanCtrl._mqttMEDcmd = data.RootElement.GetProperty("MqttMEDcmd").GetString();
-                _HTFanCtrl._mqttHIGHcmd = data.RootElement.GetProperty("MqttHIGHcmd").GetString();
-                _HTFanCtrl._mediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
-                _HTFanCtrl._mediaPlayerPort = data.RootElement.GetProperty("MediaPlayerPort").GetString();
-                _HTFanCtrl._globalOffsetMS = data.RootElement.GetProperty("GlobalOffset").GetString();
-                _HTFanCtrl._spinupOffsetMS = data.RootElement.GetProperty("SpinupOffset").GetString();
-                _HTFanCtrl._spindownOffsetMS = data.RootElement.GetProperty("SpindownOffset").GetString();
-                _HTFanCtrl._mediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
-                _HTFanCtrl._PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
+                _HTFanCtrl._settings.ControllerType = data.RootElement.GetProperty("Controller").GetString();
+                _HTFanCtrl._settings.LIRC_IP = data.RootElement.GetProperty("LircIP").GetString();
+                _HTFanCtrl._settings.LIRC_Port = Convert.ToInt32(data.RootElement.GetProperty("LircPort").GetString());
+                _HTFanCtrl._settings.LIRC_Remote = data.RootElement.GetProperty("LircRemote").GetString();
+                _HTFanCtrl._settings.MQTT_IP = data.RootElement.GetProperty("MqttIP").GetString();
+                _HTFanCtrl._settings.MQTT_Port = Convert.ToInt32(data.RootElement.GetProperty("MqttPort").GetString());
+                _HTFanCtrl._settings.MQTT_OFF_Topic = data.RootElement.GetProperty("MqttOFFtopic").GetString();
+                _HTFanCtrl._settings.MQTT_OFF_Payload = data.RootElement.GetProperty("MqttOFFpayload").GetString();
+                _HTFanCtrl._settings.MQTT_ECO_Topic = data.RootElement.GetProperty("MqttECOtopic").GetString();
+                _HTFanCtrl._settings.MQTT_ECO_Payload = data.RootElement.GetProperty("MqttECOpayload").GetString();
+                _HTFanCtrl._settings.MQTT_LOW_Topic = data.RootElement.GetProperty("MqttLOWtopic").GetString();
+                _HTFanCtrl._settings.MQTT_LOW_Payload = data.RootElement.GetProperty("MqttLOWpayload").GetString();
+                _HTFanCtrl._settings.MQTT_MED_Topic = data.RootElement.GetProperty("MqttMEDtopic").GetString();
+                _HTFanCtrl._settings.MQTT_MED_Payload = data.RootElement.GetProperty("MqttMEDpayload").GetString();
+                _HTFanCtrl._settings.MQTT_HIGH_Topic = data.RootElement.GetProperty("MqttHIGHtopic").GetString();
+                _HTFanCtrl._settings.MQTT_HIGH_Payload = data.RootElement.GetProperty("MqttHIGHpayload").GetString();
+                _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
+                _HTFanCtrl._settings.MediaPlayerPort = Convert.ToInt32(data.RootElement.GetProperty("MediaPlayerPort").GetString());
+                _HTFanCtrl._settings.GlobalOffsetMS = Convert.ToInt32(data.RootElement.GetProperty("GlobalOffset").GetString());
+                _HTFanCtrl._settings.SpinupOffsetMS = Convert.ToInt32(data.RootElement.GetProperty("SpinupOffset").GetString());
+                _HTFanCtrl._settings.SpindownOffsetMS = Convert.ToInt32(data.RootElement.GetProperty("SpindownOffset").GetString());
+                _HTFanCtrl._settings.MediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
+                _HTFanCtrl._settings.PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
 
                 if (ConfigHelper.GetOS() != "win")
                 {
-                    _HTFanCtrl._irChan1 = data.RootElement.GetProperty("IRChan1").GetBoolean().ToString().ToLower();
-                    _HTFanCtrl._irChan2 = data.RootElement.GetProperty("IRChan2").GetBoolean().ToString().ToLower();
-                    _HTFanCtrl._irChan3 = data.RootElement.GetProperty("IRChan3").GetBoolean().ToString().ToLower();
-                    _HTFanCtrl._irChan4 = data.RootElement.GetProperty("IRChan4").GetBoolean().ToString().ToLower();
+                    _HTFanCtrl._settings.IR_CHAN1 = data.RootElement.GetProperty("IRChan1").GetBoolean();
+                    _HTFanCtrl._settings.IR_CHAN2 = data.RootElement.GetProperty("IRChan2").GetBoolean();
+                    _HTFanCtrl._settings.IR_CHAN3 = data.RootElement.GetProperty("IRChan3").GetBoolean();
+                    _HTFanCtrl._settings.IR_CHAN4 = data.RootElement.GetProperty("IRChan4").GetBoolean();
                 }
 
-                _HTFanCtrl.SaveSettings();
+                Settings.SaveSettings(_HTFanCtrl._settings);
                 _HTFanCtrl.ReInitialize(true);
             }
         }
@@ -829,7 +839,7 @@ namespace HTFanControl
                 httpClient.Timeout = TimeSpan.FromSeconds(10);
                 httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
 
-                using Stream s = httpClient.GetAsync($"http://{_HTFanCtrl._mediaPlayerIP}:{_HTFanCtrl._mediaPlayerPort}/clients?X-Plex-Token={_HTFanCtrl._PlexToken}").Result.Content.ReadAsStreamAsync().Result;
+                using Stream s = httpClient.GetAsync($"http://{_HTFanCtrl._settings.MediaPlayerIP}:{_HTFanCtrl._settings.MediaPlayerPort}/clients?X-Plex-Token={_HTFanCtrl._settings.PlexToken}").Result.Content.ReadAsStreamAsync().Result;
                 XDocument plexml = XDocument.Load(s);
                 IEnumerable<XElement> plexPlayers = plexml.Descendants("MediaContainer").Descendants("Server");
 
@@ -849,16 +859,16 @@ namespace HTFanControl
 
             using JsonDocument data = JsonDocument.Parse(plexInfoJSON);
 
-            _HTFanCtrl._plexClientName = data.RootElement.GetProperty("name").GetString();
-            _HTFanCtrl._plexClientIP = data.RootElement.GetProperty("ip").GetString();
-            _HTFanCtrl._plexClientPort = data.RootElement.GetProperty("port").GetRawText();
-            _HTFanCtrl._plexClientGUID = data.RootElement.GetProperty("guid").GetString();
+            _HTFanCtrl._settings.PlexClientName = data.RootElement.GetProperty("name").GetString();
+            _HTFanCtrl._settings.PlexClientIP = data.RootElement.GetProperty("ip").GetString();
+            _HTFanCtrl._settings.PlexClientPort = data.RootElement.GetProperty("port").GetRawText();
+            _HTFanCtrl._settings.PlexClientGUID = data.RootElement.GetProperty("guid").GetString();
 
-            _HTFanCtrl.SaveSettings();
+            Settings.SaveSettings(_HTFanCtrl._settings);
             _HTFanCtrl.ReInitialize(false);
         }
 
-        private string GetAudioDevices(HttpListenerRequest request, string pageName)
+        private static string GetAudioDevices(HttpListenerRequest request, string pageName)
         {
             StringBuilder sb = new StringBuilder();
             try
@@ -892,16 +902,16 @@ namespace HTFanControl
         {
             string audioDevice = GetPostBody(request);
 
-            _HTFanCtrl._audioDevice = audioDevice;
+            _HTFanCtrl._settings.AudioDevice = audioDevice;
 
-            _HTFanCtrl.SaveSettings();
+            Settings.SaveSettings(_HTFanCtrl._settings);
             _HTFanCtrl.ReInitialize(false);
         }
 
         private string LoadedWindTrackData(HttpListenerRequest request, string pageName)
         {
             string timeMsg = "Current time: ";
-            if (_HTFanCtrl._mediaPlayerType == "Audio")
+            if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
             {
                 timeMsg = "Last time match: ";
             }
@@ -965,7 +975,7 @@ namespace HTFanControl
         private string GetCurrentMovie(HttpListenerRequest request, string pageName)
         {
             string moviename = "No video currently playing";
-            if (_HTFanCtrl._mediaPlayerType == "Audio")
+            if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
             {
                 moviename = "No video currently selected";
             }
@@ -973,7 +983,7 @@ namespace HTFanControl
             {
                 moviename = $"Loaded Video: {_HTFanCtrl._currentVideoFileName}";
 
-                if (_HTFanCtrl._mediaPlayerType != "Audio")
+                if (_HTFanCtrl._settings.MediaPlayerType != "Audio")
                 {
                     if (_HTFanCtrl._isPlaying)
                     {
@@ -1096,7 +1106,7 @@ namespace HTFanControl
                 }
 
                 Array.Copy(buffer, startPos, buffer, 0, len - startPos);
-                len = len - startPos;
+                len -= startPos;
 
                 while (true)
                 {
