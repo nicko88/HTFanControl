@@ -69,74 +69,70 @@ namespace HTFanControl
                 switch (urlpath)
                 {
                     case "/":
-                        htmlResponse = StatusPage(request, "status");
+                        htmlResponse = StatusPage();
                         break;
                     case "/statusdata":
-                        htmlResponse = GetStatusData(request, "statusdata");
+                        htmlResponse = GetStatusData();
                         break;
                     case "/currentmovie":
-                        htmlResponse = GetCurrentMovie(request, "currentmovie");
+                        htmlResponse = GetCurrentMovie();
                         break;
                     case "/settings":
-                        htmlResponse = SettingsPage(request, "settings");
+                        htmlResponse = SettingsPage();
                         break;
                     case "/savesettings":
-                        SaveSettings(request, "savesettings");
+                        SaveSettings(request);
                         break;
                     case "/raspiwifi":
-                        htmlResponse = RasPiWiFiPage(request, "raspiwifi");
+                        htmlResponse = RasPiWiFiPage();
                         break;
                     case "/savewifi":
-                        SaveWiFi(request, "savewifi");
+                        SaveWiFi(request);
                         break;
                     case "/downloadlist":
-                        htmlResponse = DownloadListPage(request, "downloadlist");
+                        htmlResponse = DownloadListPage(request);
                         break;
                     case "/download":
-                        htmlResponse = DownloadPage(request, "download");
+                        htmlResponse = DownloadPage(request);
                         break;
                     case "/manage":
-                        htmlResponse = ManagePage(request, "manage");
+                        htmlResponse = ManagePage();
                         break;
                     case "/edit":
-                        htmlResponse = EditPage(request, "edit");
+                        htmlResponse = EditPage(request);
                         break;
                     case "/add":
                         htmlResponse = GetHtml("add");
                         break;
                     case "/uploadfile":
-                        _waitForFile = true;
-                        UploadFile(request, "uploadfile");
+                        UploadFile(request);
                         break;
                     case "/rename":
-                        RenameFile(request, "rename");
+                        RenameFile(request);
                         break;
                     case "/delete":
-                        _waitForFile = true;
-                        DeleteFile(request, "delete");
+                        DeleteFile(request);
                         break;
                     case "/save":
-                        SaveFile(request, "save");
+                        SaveFile(request);
                         break;
                     case "/selectplexplayer":
                         htmlResponse = GetHtml("selectplexplayer");
                         break;
                     case "/getplexplayers":
-                        htmlResponse = GetPlexPlayers(request, "getplexplayers");
+                        htmlResponse = GetPlexPlayers();
                         break;
                     case "/saveplexplayer":
-                        _waitForFile = true;
-                        SavePlexPlayer(request, "saveplexplayer");
+                        SavePlexPlayer(request);
                         break;
                     case "/selectaudiodevice":
                         htmlResponse = GetHtml("selectaudiodevice");
                         break;
                     case "/getaudiodevices":
-                        htmlResponse = GetAudioDevices(request, "getaudiodevices");
+                        htmlResponse = GetAudioDevices();
                         break;
                     case "/saveaudiodevice":
-                        _waitForFile = true;
-                        SaveAudioDevice(request, "saveaudiodevice");
+                        SaveAudioDevice(request);
                         break;
                     case "/reload":
                         _HTFanCtrl.ReInitialize(true);
@@ -156,22 +152,22 @@ namespace HTFanControl
                         htmlResponse = GetHtml("loadedwindtrack");
                         break;
                     case "/loadedwindtrackdata":
-                        htmlResponse = LoadedWindTrackData(request, "loadedwindtrackdata");
+                        htmlResponse = LoadedWindTrackData();
                         break;
                     case "/selectvideo":
-                        htmlResponse = SelectVideoPage(request, "selectvideo");
+                        htmlResponse = SelectVideoPage();
                         break;
                     case "/select":
                         _HTFanCtrl.SelectVideo(GetPostBody(request).Replace(".zip", ""));
                         break;
                     case "/fancmd":
-                        FanCmd(request, "fancmd");
+                        FanCmd(request);
                         break;
                     case "/clearerror":
                         _HTFanCtrl._errorStatus = null;
                         break;
                     case "/checkupdate":
-                        htmlResponse = CheckUpdatePage(request, "checkupdate");
+                        htmlResponse = CheckUpdatePage();
                         break;
                     case "/raspiupdate":
                         ($"nohup {Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "updater.sh")} &>/dev/null &").Bash();
@@ -196,9 +192,9 @@ namespace HTFanControl
             }
         }
 
-        private string StatusPage(HttpListenerRequest request, string pageName)
+        private string StatusPage()
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("status");
 
             if (_HTFanCtrl._isEnabled)
             {
@@ -225,7 +221,7 @@ namespace HTFanControl
             return html;
         }
 
-        private string GetStatusData(HttpListenerRequest request, string pageName)
+        private string GetStatusData()
         {
             string timeMsg = "Current time: ";
             if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
@@ -237,7 +233,7 @@ namespace HTFanControl
 
             if (_HTFanCtrl != null)
             {
-                htmlData.AppendLine(GetCurrentMovie(request, pageName));
+                htmlData.AppendLine(GetCurrentMovie());
                 if(_HTFanCtrl._settings.MediaPlayerType == "Audio")
                 {
                     htmlData.AppendLine("<br />");
@@ -324,7 +320,7 @@ namespace HTFanControl
             return htmlData.ToString();
         }
 
-        private string SettingsPage(HttpListenerRequest request, string pageName)
+        private string SettingsPage()
         {
             if (_waitForFile)
             {
@@ -470,7 +466,7 @@ namespace HTFanControl
             return html;
         }
 
-        private void SaveSettings(HttpListenerRequest request, string pageName)
+        private void SaveSettings(HttpListenerRequest request)
         {
             string settingsInfoJSON = GetPostBody(request);
 
@@ -515,9 +511,9 @@ namespace HTFanControl
             }
         }
 
-        private static string RasPiWiFiPage(HttpListenerRequest request, string pageName)
+        private static string RasPiWiFiPage()
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("raspiwifi");
             try
             {
                 string netplan = ("cat /etc/netplan/50-cloud-init.yaml").Bash();
@@ -538,7 +534,7 @@ namespace HTFanControl
             return html;
         }
 
-        private static void SaveWiFi(HttpListenerRequest request, string pageName)
+        private static void SaveWiFi(HttpListenerRequest request)
         {
             string wifiInfoJSON = GetPostBody(request);
 
@@ -568,9 +564,9 @@ namespace HTFanControl
             }
         }
 
-        private string CheckUpdatePage(HttpListenerRequest request, string pageName)
+        private string CheckUpdatePage()
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("checkupdate");
 
             StringBuilder sb = new StringBuilder();
             try
@@ -612,9 +608,9 @@ namespace HTFanControl
             return html;
         }
 
-        private static string DownloadListPage(HttpListenerRequest request, string pageName)
+        private static string DownloadListPage(HttpListenerRequest request)
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("downloadlist");
             string searchQ = request.QueryString["searchQ"];
 
             HttpClient httpClient = new HttpClient();
@@ -665,9 +661,9 @@ namespace HTFanControl
             return html;
         }
 
-        private string DownloadPage(HttpListenerRequest request, string pageName)
+        private string DownloadPage(HttpListenerRequest request)
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("download");
             string downloadInfo = GetPostBody(request);
 
             try
@@ -703,14 +699,14 @@ namespace HTFanControl
             return html;
         }
 
-        private string ManagePage(HttpListenerRequest request, string pageName)
+        private string ManagePage()
         {
             if(_waitForFile)
             {
                 Thread.Sleep(500);
                 _waitForFile = false;
             }
-            string html = GetHtml(pageName);
+            string html = GetHtml("manage");
 
             string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "windtracks"));
             List<string> fileList = new List<string>(files);
@@ -727,9 +723,9 @@ namespace HTFanControl
             return html;
         }
 
-        private string EditPage(HttpListenerRequest request, string pageName)
+        private string EditPage(HttpListenerRequest request)
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("edit");
             string editInfo = GetPostBody(request);
 
             if (!string.IsNullOrEmpty(editInfo))
@@ -766,8 +762,10 @@ namespace HTFanControl
             return html;
         }
 
-        private void UploadFile(HttpListenerRequest request, string pageName)
+        private void UploadFile(HttpListenerRequest request)
         {
+            _waitForFile = true;
+
             string filename = HttpUtility.UrlDecode(Base64Decode(request.QueryString["filename"]));
 
             try
@@ -777,7 +775,7 @@ namespace HTFanControl
             catch { }
         }
 
-        private void RenameFile(HttpListenerRequest request, string pageName)
+        private void RenameFile(HttpListenerRequest request)
         {
             string renameInfo = GetPostBody(request);
 
@@ -793,8 +791,10 @@ namespace HTFanControl
             }
         }
 
-        private void DeleteFile(HttpListenerRequest request, string pageName)
+        private void DeleteFile(HttpListenerRequest request)
         {
+            _waitForFile = true;
+
             string deleteInfo = GetPostBody(request);
 
             if (!string.IsNullOrEmpty(deleteInfo))
@@ -808,7 +808,7 @@ namespace HTFanControl
             }
         }
 
-        private void SaveFile(HttpListenerRequest request, string pageName)
+        private void SaveFile(HttpListenerRequest request)
         {
             string saveInfo = GetPostBody(request);
 
@@ -830,7 +830,7 @@ namespace HTFanControl
             }
         }
 
-        private string GetPlexPlayers(HttpListenerRequest request, string pageName)
+        private string GetPlexPlayers()
         {
             StringBuilder sb = new StringBuilder();
             try
@@ -853,8 +853,10 @@ namespace HTFanControl
             return sb.ToString();
         }
 
-        private void SavePlexPlayer(HttpListenerRequest request, string pageName)
+        private void SavePlexPlayer(HttpListenerRequest request)
         {
+            _waitForFile = true;
+
             string plexInfoJSON = GetPostBody(request);
 
             using JsonDocument data = JsonDocument.Parse(plexInfoJSON);
@@ -868,7 +870,7 @@ namespace HTFanControl
             _HTFanCtrl.ReInitialize(false);
         }
 
-        private static string GetAudioDevices(HttpListenerRequest request, string pageName)
+        private static string GetAudioDevices()
         {
             StringBuilder sb = new StringBuilder();
             try
@@ -898,8 +900,10 @@ namespace HTFanControl
             return sb.ToString();
         }
 
-        private void SaveAudioDevice(HttpListenerRequest request, string pageName)
+        private void SaveAudioDevice(HttpListenerRequest request)
         {
+            _waitForFile = true;
+
             string audioDevice = GetPostBody(request);
 
             _HTFanCtrl._settings.AudioDevice = audioDevice;
@@ -908,7 +912,7 @@ namespace HTFanControl
             _HTFanCtrl.ReInitialize(false);
         }
 
-        private string LoadedWindTrackData(HttpListenerRequest request, string pageName)
+        private string LoadedWindTrackData()
         {
             string timeMsg = "Current time: ";
             if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
@@ -918,7 +922,7 @@ namespace HTFanControl
 
             StringBuilder sb = new StringBuilder();
 
-            sb.AppendLine(GetCurrentMovie(request, pageName));
+            sb.AppendLine(GetCurrentMovie());
             sb.AppendLine("<br /><br />");
             sb.AppendLine(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
             sb.AppendLine("<br /><br />");
@@ -950,9 +954,9 @@ namespace HTFanControl
             return sb.ToString();
         }
 
-        private string SelectVideoPage(HttpListenerRequest request, string pageName)
+        private string SelectVideoPage()
         {
-            string html = GetHtml(pageName);
+            string html = GetHtml("selectvideo");
 
             string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "windtracks"));
             List<string> fileList = new List<string>(files);
@@ -972,7 +976,7 @@ namespace HTFanControl
             return html;
         }
 
-        private string GetCurrentMovie(HttpListenerRequest request, string pageName)
+        private string GetCurrentMovie()
         {
             string moviename = "No video currently playing";
             if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
@@ -1003,7 +1007,7 @@ namespace HTFanControl
             return moviename;
         }
 
-        private void FanCmd(HttpListenerRequest request, string pageName)
+        private void FanCmd(HttpListenerRequest request)
         {
             string fanCmdInfo = GetPostBody(request);
 
@@ -1056,76 +1060,74 @@ namespace HTFanControl
             Byte[] boundaryBytes = request.ContentEncoding.GetBytes(boundary);
             Int32 boundaryLen = boundaryBytes.Length;
 
-            using (FileStream output = new FileStream(filePath, FileMode.Create, FileAccess.Write))
-            {
-                Byte[] buffer = new Byte[1024];
-                Int32 len = request.InputStream.Read(buffer, 0, 1024);
-                Int32 startPos = -1;
+            using FileStream output = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+            Byte[] buffer = new Byte[1024];
+            Int32 len = request.InputStream.Read(buffer, 0, 1024);
+            Int32 startPos = -1;
 
-                // Find start boundary
+            // Find start boundary
+            while (true)
+            {
+                if (len == 0)
+                {
+                    throw new Exception("Start Boundaray Not Found");
+                }
+
+                startPos = IndexOf(buffer, len, boundaryBytes);
+                if (startPos >= 0)
+                {
+                    break;
+                }
+                else
+                {
+                    Array.Copy(buffer, len - boundaryLen, buffer, 0, boundaryLen);
+                    len = request.InputStream.Read(buffer, boundaryLen, 1024 - boundaryLen);
+                }
+            }
+
+            // Skip four lines (Boundary, Content-Disposition, Content-Type, and a blank)
+            for (Int32 i = 0; i < 4; i++)
+            {
                 while (true)
                 {
                     if (len == 0)
                     {
-                        throw new Exception("Start Boundaray Not Found");
+                        throw new Exception("Preamble not Found.");
                     }
 
-                    startPos = IndexOf(buffer, len, boundaryBytes);
+                    startPos = Array.IndexOf(buffer, request.ContentEncoding.GetBytes("\n")[0], startPos);
                     if (startPos >= 0)
                     {
+                        startPos++;
                         break;
                     }
                     else
                     {
-                        Array.Copy(buffer, len - boundaryLen, buffer, 0, boundaryLen);
-                        len = request.InputStream.Read(buffer, boundaryLen, 1024 - boundaryLen);
+                        len = request.InputStream.Read(buffer, 0, 1024);
                     }
                 }
+            }
 
-                // Skip four lines (Boundary, Content-Disposition, Content-Type, and a blank)
-                for (Int32 i = 0; i < 4; i++)
+            Array.Copy(buffer, startPos, buffer, 0, len - startPos);
+            len -= startPos;
+
+            while (true)
+            {
+                Int32 endPos = IndexOf(buffer, len, boundaryBytes);
+                if (endPos >= 0)
                 {
-                    while (true)
-                    {
-                        if (len == 0)
-                        {
-                            throw new Exception("Preamble not Found.");
-                        }
-
-                        startPos = Array.IndexOf(buffer, request.ContentEncoding.GetBytes("\n")[0], startPos);
-                        if (startPos >= 0)
-                        {
-                            startPos++;
-                            break;
-                        }
-                        else
-                        {
-                            len = request.InputStream.Read(buffer, 0, 1024);
-                        }
-                    }
+                    if (endPos > 0) output.Write(buffer, 0, endPos - 2);
+                    break;
                 }
-
-                Array.Copy(buffer, startPos, buffer, 0, len - startPos);
-                len -= startPos;
-
-                while (true)
+                else if (len <= boundaryLen)
                 {
-                    Int32 endPos = IndexOf(buffer, len, boundaryBytes);
-                    if (endPos >= 0)
-                    {
-                        if (endPos > 0) output.Write(buffer, 0, endPos - 2);
-                        break;
-                    }
-                    else if (len <= boundaryLen)
-                    {
-                        throw new Exception("End Boundaray Not Found");
-                    }
-                    else
-                    {
-                        output.Write(buffer, 0, len - boundaryLen);
-                        Array.Copy(buffer, len - boundaryLen, buffer, 0, boundaryLen);
-                        len = request.InputStream.Read(buffer, boundaryLen, 1024 - boundaryLen) + boundaryLen;
-                    }
+                    throw new Exception("End Boundaray Not Found");
+                }
+                else
+                {
+                    output.Write(buffer, 0, len - boundaryLen);
+                    Array.Copy(buffer, len - boundaryLen, buffer, 0, boundaryLen);
+                    len = request.InputStream.Read(buffer, boundaryLen, 1024 - boundaryLen) + boundaryLen;
                 }
             }
         }
