@@ -476,10 +476,10 @@ namespace HTFanControl
 
                 _HTFanCtrl._settings.ControllerType = data.RootElement.GetProperty("Controller").GetString();
                 _HTFanCtrl._settings.LIRC_IP = data.RootElement.GetProperty("LircIP").GetString();
-                _HTFanCtrl._settings.LIRC_Port = Convert.ToInt32(data.RootElement.GetProperty("LircPort").GetString());
+                _HTFanCtrl._settings.LIRC_Port = int.TryParse(data.RootElement.GetProperty("LircPort").GetString(), out int lircPort) ? lircPort : 8765;
                 _HTFanCtrl._settings.LIRC_Remote = data.RootElement.GetProperty("LircRemote").GetString();
                 _HTFanCtrl._settings.MQTT_IP = data.RootElement.GetProperty("MqttIP").GetString();
-                _HTFanCtrl._settings.MQTT_Port = Convert.ToInt32(data.RootElement.GetProperty("MqttPort").GetString());
+                _HTFanCtrl._settings.MQTT_Port = int.TryParse(data.RootElement.GetProperty("MqttPort").GetString(), out int MqttPort) ? MqttPort : 1883;
                 _HTFanCtrl._settings.MQTT_OFF_Topic = data.RootElement.GetProperty("MqttOFFtopic").GetString();
                 _HTFanCtrl._settings.MQTT_OFF_Payload = data.RootElement.GetProperty("MqttOFFpayload").GetString();
                 _HTFanCtrl._settings.MQTT_ECO_Topic = data.RootElement.GetProperty("MqttECOtopic").GetString();
@@ -491,10 +491,10 @@ namespace HTFanControl
                 _HTFanCtrl._settings.MQTT_HIGH_Topic = data.RootElement.GetProperty("MqttHIGHtopic").GetString();
                 _HTFanCtrl._settings.MQTT_HIGH_Payload = data.RootElement.GetProperty("MqttHIGHpayload").GetString();
                 _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
-                _HTFanCtrl._settings.MediaPlayerPort = Convert.ToInt32(data.RootElement.GetProperty("MediaPlayerPort").GetString());
-                _HTFanCtrl._settings.GlobalOffsetMS = Convert.ToInt32(data.RootElement.GetProperty("GlobalOffset").GetString());
-                _HTFanCtrl._settings.SpinupOffsetMS = Convert.ToInt32(data.RootElement.GetProperty("SpinupOffset").GetString());
-                _HTFanCtrl._settings.SpindownOffsetMS = Convert.ToInt32(data.RootElement.GetProperty("SpindownOffset").GetString());
+                _HTFanCtrl._settings.MediaPlayerPort = int.TryParse(data.RootElement.GetProperty("MediaPlayerPort").GetString(), out int MediaPlayerPort) ? MediaPlayerPort : 0;
+                _HTFanCtrl._settings.GlobalOffsetMS = int.TryParse(data.RootElement.GetProperty("GlobalOffset").GetString(), out int GlobalOffset) ? GlobalOffset : 0;
+                _HTFanCtrl._settings.SpinupOffsetMS = int.TryParse(data.RootElement.GetProperty("SpinupOffset").GetString(), out int SpinupOffset) ? SpinupOffset : 0;
+                _HTFanCtrl._settings.SpindownOffsetMS = int.TryParse(data.RootElement.GetProperty("SpindownOffset").GetString(), out int SpindownOffset) ? SpindownOffset : 0;
                 _HTFanCtrl._settings.MediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
                 _HTFanCtrl._settings.PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
 

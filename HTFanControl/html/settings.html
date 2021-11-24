@@ -167,7 +167,7 @@
             padding-left: 4px;
             padding-right: 4px;
             margin-bottom: 8px;
-			display: table;
+			display: block;
         }
 		
 		.nrow {
@@ -219,7 +219,7 @@
 	</ul>
 
 <h3>Settings</h3>
-<div class="form-row ngroup">
+<div class="ngroup">
 	<div class="nrow">
 		<div class="nitem" style="flex-grow: 1;">
 			<b>Fan Control Type</b>
@@ -268,7 +268,7 @@
 
 	<div id="mqttDiv" style="display: none; padding-bottom: 5px;">
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>MQTT IP</b><input type="text" class="form-control" id="MqttIP" value="{MqttIP}"></div>
+			<div class="nitem" style="flex-grow: 2;"><b>MQTT Broker IP</b><input type="text" class="form-control" id="MqttIP" value="{MqttIP}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>Port (optional)</b><input type="number" class="form-control" id="MqttPort" value="{MqttPort}"></div>
 		</div>
 		<div class="nrow">
@@ -343,8 +343,8 @@
 
 	<div class="nrow">
 		<div class="nitem" style="flex-grow: 1;"><b>Global Offset (ms)</b><input type="number" class="form-control" id="GlobalOffset" value="{GlobalOffset}"></div>
-		<div class="nitem" style="flex-grow: 1;"><b>Spin Up Offset (ms)</b><input type="number" class="form-control" id="SpinupOffset" value="{SpinupOffset}"></div>
-		<div class="nitem" style="flex-grow: 1;"><b>Spin Down Offset (ms)</b><input type="number" class="form-control" id="SpindownOffset" value="{SpindownOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>SpinUp Offset (ms)</b><input type="number" class="form-control" id="SpinupOffset" value="{SpinupOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>SpinDown Offset (ms)</b><input type="number" class="form-control" id="SpindownOffset" value="{SpindownOffset}"></div>
 	</div>
 
 </div>

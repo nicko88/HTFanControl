@@ -6,9 +6,9 @@
 	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
 	<Configurations>Debug;ReleaseWin;ReleaseLinux</Configurations>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <AssemblyVersion>0.1.1.0</AssemblyVersion>
-    <FileVersion>0.1.1.0</FileVersion>
-    <Version>0.1.1</Version>
+    <AssemblyVersion>0.2.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <Version>0.2.0</Version>
     <Description>4D Theater Wind Effect - DIY Home Theater Project</Description>
     <Copyright>nicko88</Copyright>
   </PropertyGroup>
@@ -72,12 +72,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.37" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="MQTTnet" Version="3.0.17" />
+    <PackageReference Include="MQTTnet" Version="3.1.0" />
     <PackageReference Include="OpenTK.OpenAL" Version="4.6.7" />
-    <PackageReference Include="SoundFingerprinting" Version="7.9.6" />
-    <PackageReference Include="SoundFingerprinting.Emy" Version="7.9.6" />
+    <PackageReference Include="SoundFingerprinting" Version="7.15.0" />
+    <PackageReference Include="SoundFingerprinting.Emy" Version="7.15.5" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

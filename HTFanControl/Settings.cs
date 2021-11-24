@@ -52,7 +52,7 @@ namespace HTFanControl
                 options.WriteIndented = true;
 
                 string jsonSettings = File.ReadAllText(Path.Combine(_rootPath, "HTFanControlSettings.json"));
-                settings = JsonSerializer.Deserialize<Settings>(Path.Combine(_rootPath, "HTFanControlSettings.json"), options);
+                settings = JsonSerializer.Deserialize<Settings>(jsonSettings, options);
             }
             catch
             {

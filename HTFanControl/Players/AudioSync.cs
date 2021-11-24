@@ -11,6 +11,7 @@ using SoundFingerprinting.Query;
 using OpenTK.Audio.OpenAL;
 using System.IO;
 using System.Net.Http;
+using System.Linq;
 
 namespace HTFanControl
 {
@@ -24,7 +25,7 @@ namespace HTFanControl
         private InMemoryModelService _modelService;
 
         private CancellationTokenSource tokenSource;
-        private BlockingCollection<AudioSamples> _blockingCollection;
+        private BlockingCollection<AudioSamples> _realtimeSource;
         private List<float> _float32Buffer = new List<float>();
 
         //private Timer _pause;
@@ -77,7 +78,7 @@ namespace HTFanControl
             _state = "";
 
             _modelService = null;
-            _blockingCollection = null;
+            _realtimeSource = null;
             _float32Buffer = new List<float>();
 
             try
@@ -108,7 +109,7 @@ namespace HTFanControl
 
         private async void StartMatching(CancellationToken cancellationToken)
         {
-            _blockingCollection = new BlockingCollection<AudioSamples>();
+            _realtimeSource = new BlockingCollection<AudioSamples>();
 
             Console.WriteLine("Start Listening...");
             //Log.WriteLine("Start Listening...");
@@ -116,38 +117,43 @@ namespace HTFanControl
 
             try
             {
-                double queryResult = await GetBestMatchForStream(new BlockingRealtimeCollection<AudioSamples>(_blockingCollection), cancellationToken);
+                _ = await GetBestMatchForStream(_realtimeSource, cancellationToken);
             }
             catch { }
         }
 
-        private void FoundMatch(ResultEntry resultEntry)
+        private void FoundMatch(AVQueryResult aVQueryResult)
         {
-            _timeJump = false;
-            TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength - resultEntry.QueryMatchStartsAt + 0.65);
-
-            if(matchTime > _lastMatchTime.Add(TimeSpan.FromMinutes(5)) || matchTime < _lastMatchTime.Subtract(TimeSpan.FromMinutes(5)))
+            if (aVQueryResult.ContainsMatches)
             {
-                _timeJump = true;
-                _lastMatchTime = matchTime;
-                Console.WriteLine("Time Jump Detected");
-                //Log.WriteLine("Time Jump Detected");
-            }
+                ResultEntry resultEntry = aVQueryResult.ResultEntries.First().Audio;
 
-            if (!_timeJump)
-            {
-                Console.WriteLine($"Match Found: {matchTime:G}");
-                //Log.WriteLine($"Match Found: {matchTime:G}");
-                _hTFanControl._currentVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
-                _hTFanControl.UpdateTime();
-                _lastMatchTime = matchTime;
-            }
+                _timeJump = false;
+                TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength + TimeSpan.FromMilliseconds(aVQueryResult.QueryCommandStats.Audio.TotalDurationMilliseconds).TotalSeconds + 0.12);
 
-            //_pause.Change(10000, Timeout.Infinite);
+                if (matchTime > _lastMatchTime.Add(TimeSpan.FromMinutes(5)) || matchTime < _lastMatchTime.Subtract(TimeSpan.FromMinutes(5)))
+                {
+                    _timeJump = true;
+                    _lastMatchTime = matchTime;
+                    Console.WriteLine("Time Jump Detected");
+                    //Log.WriteLine("Time Jump Detected");
+                }
 
-            if (verifyAccuracy)
-            {
-                VerifyAccuracy(matchTime);
+                if (!_timeJump)
+                {
+                    Console.WriteLine($"Match Found: {matchTime:G}");
+                    //Log.WriteLine($"Match Found: {matchTime:G}");
+                    _hTFanControl._currentVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
+                    _hTFanControl.UpdateTime();
+                    _lastMatchTime = matchTime;
+                }
+
+                //_pause.Change(10000, Timeout.Infinite);
+
+                if (verifyAccuracy)
+                {
+                    VerifyAccuracy(matchTime);
+                }
             }
         }
 
@@ -199,21 +205,18 @@ namespace HTFanControl
                         {
                             int samplesAvailable = ALC.GetAvailableSamples(captureDevice);
 
-                            short[] samples = new short[samplesAvailable];
-                            ALC.CaptureSamples(captureDevice, ref samples[0], samplesAvailable);
-
-                            for (int i = 0; i < samples.Length; i += 2)
+                            if (samplesAvailable > 0)
                             {
-                                float fSample = samples[i] / 32768f;
-                                _float32Buffer.Add(fSample);
+                                short[] samples = new short[samplesAvailable];
+                                ALC.CaptureSamples(captureDevice, ref samples[0], samplesAvailable);
 
-                                if (_float32Buffer.Count == 10240)
+                                for (int i = 0; i < samples.Length; i += 2)
                                 {
-                                    AudioSamples audioSamples = new AudioSamples(_float32Buffer.ToArray(), "", 5512);
-                                    _blockingCollection.Add(audioSamples);
-
-                                    _float32Buffer = new List<float>();
+                                    _float32Buffer.Add(samples[i] / 32767f);
                                 }
+
+                                _realtimeSource.Add(new AudioSamples(_float32Buffer.ToArray(), string.Empty, 5512));
+                                _float32Buffer = new List<float>();
                             }
                         }
                         else
@@ -231,20 +234,20 @@ namespace HTFanControl
             }
         }
 
-        private async Task<double> GetBestMatchForStream(BlockingRealtimeCollection<AudioSamples> audioSamples, CancellationToken token)
+        public async Task<double> GetBestMatchForStream(BlockingCollection<AudioSamples> audioSamples, CancellationToken token)
         {
-            var queryResult = await QueryCommandBuilder.Instance
-                                .BuildRealtimeQueryCommand()
-                                .From(audioSamples)
-                                .WithRealtimeQueryConfig(config =>
-                                {
-                                    config.ResultEntryFilter = new TrackMatchLengthEntryFilter(1d);
-                                    config.SuccessCallback = FoundMatch;
-                                    return config;
-                                })
-                                .UsingServices(_modelService)
-                                .Query(token);
-            return queryResult;
+            double seconds = await QueryCommandBuilder.Instance
+                                    .BuildRealtimeQueryCommand()
+                                    .From(new BlockingRealtimeCollection<AudioSamples>(audioSamples))
+                                    .WithRealtimeQueryConfig(config =>
+                                    {
+                                        config.ResultEntryFilter = new TrackMatchLengthEntryFilter(3d);
+                                        config.SuccessCallback = result => FoundMatch(result);
+                                        return config;
+                                    })
+                                    .UsingServices(_modelService)
+                                    .Query(token);
+            return seconds;
         }
     }
 }
