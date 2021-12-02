@@ -2,6 +2,7 @@
 using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using System;
+using System.Threading;
 
 namespace HTFanControl.Controllers
 {
@@ -9,12 +10,15 @@ namespace HTFanControl.Controllers
     {
         private IMqttClient _mqttClient;
         private Settings _settings;
+        private bool _isOFF = true;
+        private bool _specialONcmd = false;
 
         public string ErrorStatus { get; private set; }
 
         public MQTTController(Settings settings)
         {
             _settings = settings;
+            _specialONcmd = !string.IsNullOrEmpty(_settings.MQTT_ON_Topic);
         }
 
         public bool Connect()
@@ -88,6 +92,27 @@ namespace HTFanControl.Controllers
                 _ => _settings.MQTT_OFF_Payload,
             };
 
+            //special case for someone using IR over MQTT and their fan needs to be turned on before it can be set to a speed.
+            if(_specialONcmd && _isOFF)
+            {
+                if(cmd != "OFF")
+                {
+                    MqttApplicationMessage message = new MqttApplicationMessageBuilder()
+                        .WithTopic(_settings.MQTT_ON_Topic)
+                        .WithPayload(_settings.MQTT_ON_Payload)
+                        .Build();
+
+                    _mqttClient.PublishAsync(message);
+
+                    Thread.Sleep(_settings.MQTT_ON_Delay);
+                }
+                else
+                {
+                    mqttPayload = "";
+                    Console.WriteLine("(Ignored OFF Command)");
+                }
+            }
+
             try
             {
                 MqttApplicationMessage message = new MqttApplicationMessageBuilder()
@@ -96,12 +121,21 @@ namespace HTFanControl.Controllers
                     .Build();
 
                 IAsyncResult result = _mqttClient.PublishAsync(message);
-                result.AsyncWaitHandle.WaitOne(3000);
+                result.AsyncWaitHandle.WaitOne(1000);
             }
             catch
             {
                 ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed sending Topic: ""{mqttTopic}"" and Payload: ""{mqttPayload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                 return false;
+            }
+
+            if (cmd == "OFF")
+            {
+                _isOFF = true;
+            }
+            else
+            {
+                _isOFF = false;
             }
 
             return true;

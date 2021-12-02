@@ -28,6 +28,9 @@ namespace HTFanControl
         public string MQTT_MED_Payload { get; set; }
         public string MQTT_HIGH_Topic { get; set; }
         public string MQTT_HIGH_Payload { get; set; }
+        public string MQTT_ON_Topic { get; set; }
+        public string MQTT_ON_Payload { get; set; }
+        public int MQTT_ON_Delay { get; set; }
         public string AudioDevice { get; set; }
         public string PlexToken { get; set; }
         public string PlexClientName { get; set; }
