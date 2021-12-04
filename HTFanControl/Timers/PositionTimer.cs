@@ -52,6 +52,7 @@ namespace HTFanControl.Timers
 
     internal class PositionTimer<T> : PositionTimer
     {
+        private readonly ExecutionContext _executionContext;
         private readonly TimeSpan[] _positions;
         private readonly T[] _values;
         private readonly T _defaultValue;
@@ -83,7 +84,10 @@ namespace HTFanControl.Timers
                     "Must be greater than 0");
             }
 
-            var orderedValues = values.OrderBy(v => v.position).ToList();
+            _executionContext = ExecutionContext.Capture() ??
+                                throw new InvalidOperationException("Execution context flow must not be suppressed.");
+
+            var orderedValues = values.OrderBy(static v => v.position).ToList();
             var count = orderedValues.Count;
             _positions = new TimeSpan[count];
             _values = new T[count];
@@ -160,7 +164,11 @@ namespace HTFanControl.Timers
 
                     if (_positions.Length > 0)
                     {
-                        _timer = new Timer(TimerCallback);
+                        ExecutionContext.Run(_executionContext, static state =>
+                        {
+                            var timer = (PositionTimer<T>) state;
+                            timer._timer = new Timer(timer.TimerCallback);
+                        }, this);
 
                         UpdateStateAndChangeOrInvoke(currentPosition);
                     }
@@ -258,7 +266,7 @@ namespace HTFanControl.Timers
                 }
                 else
                 {
-                    Volatile.Write(ref _action, null);
+                    Interlocked.Exchange(ref _action, null);
                     _timer?.Dispose();
                     _timer = null;
                     _stopwatch.Reset();
@@ -381,7 +389,10 @@ namespace HTFanControl.Timers
             {
                 _lastValue = _defaultValue;
                 _invoking = true;
-                ThreadPool.QueueUserWorkItem(state => ((PositionTimer<T>) state).TimerCallback(null), this);
+                ExecutionContext.Run(_executionContext,
+                    static state =>
+                        ThreadPool.QueueUserWorkItem(static state => ((PositionTimer<T>) state).TimerCallback(null),
+                            state), this);
             }
             else
             {
