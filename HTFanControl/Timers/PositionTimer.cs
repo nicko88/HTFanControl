@@ -84,8 +84,7 @@ namespace HTFanControl.Timers
                     "Must be greater than 0");
             }
 
-            _executionContext = ExecutionContext.Capture() ??
-                                throw new InvalidOperationException("Execution context flow must not be suppressed.");
+            _executionContext = ExecutionContext.Capture();
 
             var orderedValues = values.OrderBy(static v => v.position).ToList();
             var count = orderedValues.Count;
@@ -164,11 +163,15 @@ namespace HTFanControl.Timers
 
                     if (_positions.Length > 0)
                     {
-                        ExecutionContext.Run(_executionContext, static state =>
+                        if (!ExecutionContext.IsFlowSuppressed())
                         {
-                            var timer = (PositionTimer<T>) state;
-                            timer._timer = new Timer(timer.TimerCallback);
-                        }, this);
+                            using (ExecutionContext.SuppressFlow())
+                                _timer = new Timer(TimerCallback);
+                        }
+                        else
+                        {
+                            _timer = new Timer(TimerCallback);
+                        }
 
                         UpdateStateAndChangeOrInvoke(currentPosition);
                     }
@@ -327,7 +330,18 @@ namespace HTFanControl.Timers
                 }
             }
 
-            Volatile.Read(ref _action)?.Invoke(this, _lastValue);
+            if (_executionContext != null)
+            {
+                ExecutionContext.Run(_executionContext, static state =>
+                {
+                    var timer = (PositionTimer<T>) state;
+                    Volatile.Read(ref timer._action)?.Invoke(timer, timer._lastValue);
+                }, this);
+            }
+            else
+            {
+                Volatile.Read(ref _action)?.Invoke(this, _lastValue);
+            }
 
             lock (_positions)
             {
@@ -389,10 +403,8 @@ namespace HTFanControl.Timers
             {
                 _lastValue = _defaultValue;
                 _invoking = true;
-                ExecutionContext.Run(_executionContext,
-                    static state =>
-                        ThreadPool.QueueUserWorkItem(static state => ((PositionTimer<T>) state).TimerCallback(null),
-                            state), this);
+                ThreadPool.UnsafeQueueUserWorkItem(static state => ((PositionTimer<T>) state).TimerCallback(null),
+                    this);
             }
             else
             {
