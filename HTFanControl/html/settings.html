@@ -60,11 +60,7 @@
 				SpinupOffset: document.getElementById('SpinupOffset').value,
 				SpindownOffset: document.getElementById('SpindownOffset').value,
 				MediaPlayer: document.querySelector('input[name="MediaPlayer"]:checked').value,
-				PlexToken: document.getElementById('PlexToken').value,
-				IRChan1: document.getElementById('IRChan1').checked,
-				IRChan2: document.getElementById('IRChan2').checked,
-				IRChan3: document.getElementById('IRChan3').checked,
-				IRChan4: document.getElementById('IRChan4').checked
+				PlexToken: document.getElementById('PlexToken').value
 			};
 
 			fetch('savesettings', {
@@ -195,8 +191,8 @@
             padding-right: 0;
         }
 
-		.linux {
-			display: {showlinux};
+		.raspi {
+			/*{showraspi}*/
 		}
 	</style>
 </head>
@@ -213,7 +209,7 @@
 		<li class="nav-item">
 			<a class="nav-link text-muted" href="fantester">Fan Tester</a>
 		</li>
-		<li class="nav-item linux">
+		<li class="nav-item raspi">
 			<a class="nav-link text-muted" href="raspiwifi">RasPi WiFi</a>
 		</li>
 	</ul>
@@ -225,12 +221,12 @@
 			<b>Fan Control Type</b>
 			<br />
 			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="radio" name="Controller" id="LIRC" value="LIRC" onclick="lirc()" {LIRC}>
-				<label class="form-check-label" for="LIRC">LIRC</label>
-			</div>
-			<div class="form-check form-check-inline">
 				<input class="form-check-input" type="radio" name="Controller" id="MQTT" value="MQTT" onclick="mqtt()" {MQTT}>
 				<label class="form-check-label" for="MQTT">MQTT</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="Controller" id="LIRC" value="LIRC" onclick="lirc()" {LIRC}>
+				<label class="form-check-label" for="LIRC">LIRC</label>
 			</div>
 		</div>
 	</div>
@@ -239,30 +235,6 @@
 			<div class="nitem" style="flex-grow: 1;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="number" class="form-control" id="LircPort" value="{LircPort}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>Remote Name</b><input type="text" class="form-control" id="LircRemote" value="{LircRemote}"></div>
-		</div>
-
-		<div class="nrow linux">
-			<div class="nitem" style="flex-grow: 1;">
-				<b>IR Emitter Channels</b>
-				<br />
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="IRChan1" {IRChan1}>
-					<label class="form-check-label" for="IRChan1">Channel 1</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="IRChan3" {IRChan3}>
-					<label class="form-check-label" for="IRChan3">Channel 3</label>
-				</div>
-				<br />
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="IRChan2" {IRChan2}>
-					<label class="form-check-label" for="IRChan2">Channel 2</label>
-				</div>
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="IRChan4" {IRChan4}>
-					<label class="form-check-label" for="IRChan4">Channel 4</label>
-				</div>
-			</div>
 		</div>
 	</div>
 
@@ -298,12 +270,12 @@
 			<b>Media Player Type</b>
 			<br />
 			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="radio" name="MediaPlayer" id="MPC" value="MPC" onclick="mpc()" {MPC}>
-				<label class="form-check-label" for="MPC">MPC-HC/BE</label>
-			</div>
-			<div class="form-check form-check-inline">
 				<input class="form-check-input" type="radio" name="MediaPlayer" id="Kodi" value="Kodi" onclick="kodi()" {Kodi}>
 				<label class="form-check-label" for="Kodi">Kodi</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="MPC" value="MPC" onclick="mpc()" {MPC}>
+				<label class="form-check-label" for="MPC">MPC-HC/BE</label>
 			</div>
 			<div class="form-check form-check-inline">
 				<input class="form-check-input" type="radio" name="MediaPlayer" id="Plex" value="Plex" onclick="plex()" {Plex}>
@@ -351,7 +323,7 @@
 
 <div class="nrow">
 <div class="nitem" style="flex-grow: 1;"><button onclick="ConfirmSave()" class="btn btn-primary">Save Settings</button></div>
-<div class="nitem linux" style="flex-grow: 1;"><button onclick="shutdown()" class="btn btn-danger">Shutdown App</button></div>
+<div class="nitem raspi" style="flex-grow: 1;"><button onclick="shutdown()" class="btn btn-danger">Shutdown App</button></div>
 </div>
 
 <br />

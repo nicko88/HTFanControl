@@ -332,11 +332,11 @@ namespace HTFanControl
 
             if (ConfigHelper.GetOS() == "win")
             {
-                html = html.Replace("{showlinux}", "none");
+                html = html.Replace("/*{showraspi}*/", "display: none;");
             }
             else
             {
-                html = html.Replace("{showlinux}", "initial");
+                html = html.Replace("/*{showraspi}*/", "display: initial;");
             }
 
             if (_HTFanCtrl._settings.ControllerType == "LIRC")
@@ -425,42 +425,6 @@ namespace HTFanControl
             html = html.Replace("{SpinupOffset}", _HTFanCtrl._settings.SpinupOffsetMS.ToString());
             html = html.Replace("{SpindownOffset}", _HTFanCtrl._settings.SpindownOffsetMS.ToString());
 
-            if (ConfigHelper.GetOS() != "win")
-            {
-                if(_HTFanCtrl._settings.IR_CHAN1)
-                {
-                    html = html.Replace("{IRChan1}", "checked");
-                }
-                else
-                {
-                    html = html.Replace("{IRChan1}", "");
-                }
-                if (_HTFanCtrl._settings.IR_CHAN2)
-                {
-                    html = html.Replace("{IRChan2}", "checked");
-                }
-                else
-                {
-                    html = html.Replace("{IRChan2}", "");
-                }
-                if (_HTFanCtrl._settings.IR_CHAN3)
-                {
-                    html = html.Replace("{IRChan3}", "checked");
-                }
-                else
-                {
-                    html = html.Replace("{IRChan3}", "");
-                }
-                if (_HTFanCtrl._settings.IR_CHAN4)
-                {
-                    html = html.Replace("{IRChan4}", "checked");
-                }
-                else
-                {
-                    html = html.Replace("{IRChan4}", "");
-                }
-            }
-
             html = html.Replace("{version}", @$"Version: {_version} <a href=""checkupdate"">(Check For Update)</a>");
 
             return html;
@@ -497,14 +461,6 @@ namespace HTFanControl
                 _HTFanCtrl._settings.SpindownOffsetMS = int.TryParse(data.RootElement.GetProperty("SpindownOffset").GetString(), out int SpindownOffset) ? SpindownOffset : 0;
                 _HTFanCtrl._settings.MediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
                 _HTFanCtrl._settings.PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
-
-                if (ConfigHelper.GetOS() != "win")
-                {
-                    _HTFanCtrl._settings.IR_CHAN1 = data.RootElement.GetProperty("IRChan1").GetBoolean();
-                    _HTFanCtrl._settings.IR_CHAN2 = data.RootElement.GetProperty("IRChan2").GetBoolean();
-                    _HTFanCtrl._settings.IR_CHAN3 = data.RootElement.GetProperty("IRChan3").GetBoolean();
-                    _HTFanCtrl._settings.IR_CHAN4 = data.RootElement.GetProperty("IRChan4").GetBoolean();
-                }
 
                 Settings.SaveSettings(_HTFanCtrl._settings);
                 _HTFanCtrl.ReInitialize(true);

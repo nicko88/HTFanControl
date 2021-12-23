@@ -40,10 +40,6 @@ namespace HTFanControl
         public int GlobalOffsetMS { get; set; }
         public int SpinupOffsetMS { get; set; }
         public int SpindownOffsetMS { get; set; }
-        public bool IR_CHAN1 { get; set; }
-        public bool IR_CHAN2 { get; set; }
-        public bool IR_CHAN3 { get; set; }
-        public bool IR_CHAN4 { get; set; }
 
         public static Settings LoadSettings()
         {
@@ -60,20 +56,13 @@ namespace HTFanControl
             catch
             {
                 //default values
-                settings.MediaPlayerType = "MPC";
+                settings.MediaPlayerType = "Kodi";
                 settings.MediaPlayerIP = "127.0.0.1";
-                settings.MediaPlayerPort = 13579;
-                settings.ControllerType = "LIRC";
-                settings.LIRC_IP = "127.0.0.1";
-                settings.LIRC_Port = 8765;
-                settings.LIRC_Remote = "EHF10127B";
-                settings.GlobalOffsetMS = 2500;
-                settings.SpinupOffsetMS = 1500;
-
-                if (ConfigHelper.GetOS() != "win")
-                {
-                    settings.IR_CHAN1 = true;
-                }
+                settings.MediaPlayerPort = 8080;
+                settings.ControllerType = "MQTT";
+                settings.GlobalOffsetMS = 2000;
+                settings.SpinupOffsetMS = 750;
+                settings.SpindownOffsetMS = 250;
             }
 
             return settings;

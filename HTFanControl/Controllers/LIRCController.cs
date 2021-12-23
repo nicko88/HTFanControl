@@ -55,7 +55,6 @@ namespace HTFanControl.Controllers
                 _lircSocket.EndConnect(result);
 
                 Thread.Sleep(25);
-                SetTransmitters();
             }
             catch
             {
@@ -145,33 +144,6 @@ namespace HTFanControl.Controllers
             }
 
             return true;
-        }
-
-        private void SetTransmitters()
-        {
-            if (ConfigHelper.GetOS() != "win")
-            {
-                string irChannels = "";
-                if (_settings.IR_CHAN1)
-                {
-                    irChannels += "1 ";
-                }
-                if (_settings.IR_CHAN2)
-                {
-                    irChannels += "2 ";
-                }
-                if (_settings.IR_CHAN3)
-                {
-                    irChannels += "3 ";
-                }
-                if (_settings.IR_CHAN4)
-                {
-                    irChannels += "4 ";
-                }
-
-                SendLIRCBytes(Encoding.ASCII.GetBytes($"SET_TRANSMITTERS {irChannels}\n"));
-                Console.WriteLine($"SET_TRANSMITTERS {irChannels}\n");
-            }
         }
 
         private void LoadLIRCMapping()

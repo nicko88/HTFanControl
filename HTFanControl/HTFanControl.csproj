@@ -11,6 +11,7 @@
     <Version>0.2.0</Version>
     <Description>4D Theater Wind Effect - DIY Home Theater Project</Description>
     <Copyright>nicko88</Copyright>
+    <Authors>nicko88</Authors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseLinux|AnyCPU'">
@@ -72,12 +73,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.39" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="MQTTnet" Version="3.1.0" />
+    <PackageReference Include="MQTTnet" Version="3.1.1" />
     <PackageReference Include="OpenTK.OpenAL" Version="4.6.7" />
-    <PackageReference Include="SoundFingerprinting" Version="7.16.0" />
-    <PackageReference Include="SoundFingerprinting.Emy" Version="7.15.5" />
+    <PackageReference Include="SoundFingerprinting" Version="7.17.0" />
+    <PackageReference Include="SoundFingerprinting.Emy" Version="7.17.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

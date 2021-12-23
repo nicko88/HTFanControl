@@ -7,7 +7,6 @@ namespace HTFanControl
 {
     public static class ConfigHelper
     {
-
         public static string GetIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -32,10 +31,6 @@ namespace HTFanControl
             else if(OS.Contains("raspi"))
             {
                 OS = "raspi";
-            }
-            else if (OS.Contains("Linux"))
-            {
-                OS = "linux";
             }
 
             return OS;
