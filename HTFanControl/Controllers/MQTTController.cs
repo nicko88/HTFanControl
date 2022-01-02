@@ -23,15 +23,7 @@ namespace HTFanControl.Controllers
 
         public bool Connect()
         {
-            if (_mqttClient != null)
-            {
-                try
-                {
-                    _mqttClient.DisconnectAsync();
-                    _mqttClient.Dispose();
-                }
-                catch { }
-            }
+            Disconnect();
 
             try
             {
@@ -64,6 +56,19 @@ namespace HTFanControl.Controllers
             }
 
             return true;
+        }
+
+        public void Disconnect()
+        {
+            if (_mqttClient != null)
+            {
+                try
+                {
+                    _mqttClient.DisconnectAsync();
+                    _mqttClient.Dispose();
+                }
+                catch { }
+            }
         }
 
         public bool SendCMD(string cmd)

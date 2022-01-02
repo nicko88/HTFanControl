@@ -28,15 +28,7 @@ namespace HTFanControl.Controllers
 
         public bool Connect()
         {
-            if (_lircSocket != null)
-            {
-                try
-                {
-                    _lircSocket.Shutdown(SocketShutdown.Both);
-                    _lircSocket.Close();
-                }
-                catch { }
-            }
+            Disconnect();
 
             try
             {
@@ -65,6 +57,19 @@ namespace HTFanControl.Controllers
             Thread.Sleep(25);
 
             return true;
+        }
+
+        public void Disconnect()
+        {
+            if (_lircSocket != null)
+            {
+                try
+                {
+                    _lircSocket.Shutdown(SocketShutdown.Both);
+                    _lircSocket.Close();
+                }
+                catch { }
+            }
         }
 
         public bool SendCMD(string cmd)

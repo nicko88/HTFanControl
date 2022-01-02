@@ -8,6 +8,7 @@
         }
 
         bool Connect();
+        void Disconnect();
         bool SendCMD(string cmd);
     }
 }

@@ -265,7 +265,7 @@ namespace HTFanControl
                 }
 
                 htmlData.AppendLine("<br /><br />");
-                htmlData.Append(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
+                htmlData.Append(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._loadedVideoTime).ToString("G").Substring(2, 12));
                 htmlData.AppendLine("<br /><br />");
 
                 if (_HTFanCtrl._videoTimeCodes != null)
@@ -294,9 +294,9 @@ namespace HTFanControl
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+                    if (!string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename))
                     {
-                        htmlData.AppendLine("No wind track file found named: " + _HTFanCtrl._currentVideoFileName + ".txt");
+                        htmlData.AppendLine("No wind track file found named: " + _HTFanCtrl._loadedVideoFilename + ".txt");
                         htmlData.AppendLine("<br /><br />");
                     }
                     htmlData.AppendLine("<b>Current Command:</b>");
@@ -735,12 +735,12 @@ namespace HTFanControl
         {
             string renameInfo = GetPostBody(request);
 
-            if (!string.IsNullOrEmpty(renameInfo) && !string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+            if (!string.IsNullOrEmpty(renameInfo) && !string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename))
             {
                 try
                 {
                     string ext = Path.GetExtension(renameInfo);
-                    File.Move(Path.Combine(_HTFanCtrl._rootPath, "windtracks", renameInfo), Path.Combine(_HTFanCtrl._rootPath, "windtracks", _HTFanCtrl._currentVideoFileName + ext), true);
+                    File.Move(Path.Combine(_HTFanCtrl._rootPath, "windtracks", renameInfo), Path.Combine(_HTFanCtrl._rootPath, "windtracks", _HTFanCtrl._loadedVideoFilename + ext), true);
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(false);
@@ -771,9 +771,9 @@ namespace HTFanControl
             if (!string.IsNullOrEmpty(saveInfo))
             {
                 string fileName = saveInfo;
-                if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+                if (!string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename))
                 {
-                    fileName = _HTFanCtrl._currentVideoFileName;
+                    fileName = _HTFanCtrl._loadedVideoFilename;
                 }
 
                 try
@@ -880,7 +880,7 @@ namespace HTFanControl
 
             sb.AppendLine(GetCurrentMovie());
             sb.AppendLine("<br /><br />");
-            sb.AppendLine(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._currentVideoTime).ToString("G").Substring(2, 12));
+            sb.AppendLine(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._loadedVideoTime).ToString("G").Substring(2, 12));
             sb.AppendLine("<br /><br />");
 
             if (_HTFanCtrl._videoTimeCodes != null)
@@ -939,9 +939,9 @@ namespace HTFanControl
             {
                 moviename = "No video currently selected";
             }
-            if (!string.IsNullOrEmpty(_HTFanCtrl._currentVideoFileName))
+            if (!string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename))
             {
-                moviename = $"Loaded Video: {_HTFanCtrl._currentVideoFileName}";
+                moviename = $"Loaded Video: {_HTFanCtrl._loadedVideoFilename}";
 
                 if (_HTFanCtrl._settings.MediaPlayerType != "Audio")
                 {

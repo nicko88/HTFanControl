@@ -52,6 +52,10 @@
 			touch-action: pinch-zoom pan-y;
 		}
 
+        a:hover {
+            color: white;
+        }
+
 		body {
 			color: white;
 			background-color: black;
@@ -75,10 +79,18 @@
 			text-align: center;
 		}
 
-		.nav-link {
-			padding-left: 0;
-			padding-right: 0;
-		}
+        .nav-tabs .nav-link.active {
+            color: lightgreen;
+            font-weight: bold;
+        }
+
+        .nav-link {
+            padding-left: 0;
+            padding-right: 0;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            color: white;
+        }
 	</style>
 </head>
 <body>
@@ -86,13 +98,13 @@
 
 		<ul class="nav nav-tabs bg-dark sticky-top">
 			<li class="nav-item">
-				<a class="nav-link text-muted" href="/">Status</a>
+				<a class="nav-link" href="/">Status</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link text-muted" href="settings">General</a>
+				<a class="nav-link" href="settings">General</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link text-muted" href="fantester">Fan Tester</a>
+				<a class="nav-link" href="fantester">Fan Tester</a>
 			</li>
 		</ul>
 

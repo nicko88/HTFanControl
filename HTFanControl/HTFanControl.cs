@@ -17,8 +17,9 @@ namespace HTFanControl
 
         public string _errorStatus;
         public string _windtrackError;
-        public long _currentVideoTime = 0;
-        public string _currentVideoFileName;
+        public long _loadedVideoTime = 0;
+        public string _loadedVideoFilename;
+        public string _currentWindtrackPath;
         public string _windTrackHeader;
         public int _curCmdIndex = -1;
         public int _nextCmdIndex = 0;
@@ -52,9 +53,9 @@ namespace HTFanControl
         public void ReInitialize(bool fullRefresh)
         {
             _videoTimer?.Stop();
-            _currentVideoFileName = "";
+            _loadedVideoFilename = "";
             _windTrackHeader = "";
-            _currentVideoTime = 0;
+            _loadedVideoTime = 0;
             _videoTimeCodes = null;
             _curCmdIndex = -1;
             _nextCmdIndex = 0;
@@ -75,6 +76,8 @@ namespace HTFanControl
 
         private void SelectController()
         {
+            _fanController?.Disconnect();
+
             _fanController = _settings.ControllerType switch
             {
                 "LIRC" => new LIRCController(_settings),
@@ -114,11 +117,11 @@ namespace HTFanControl
         {
             ExtractWindtrack(Path.Combine(_rootPath, "windtracks", fileName + ".zip"), true);
 
-            _currentVideoFileName = "Loading Video Fingerprints...";
+            _loadedVideoFilename = "Loading Video Fingerprints...";
             _windTrackHeader = "Loading Windtrack...";
 
             _audioSync.Start(fileName);
-            _currentVideoFileName = fileName;
+            _loadedVideoFilename = fileName;
             LoadVideoTimecodes(fileName, "");
 
             if (_videoTimer != null)
@@ -137,7 +140,7 @@ namespace HTFanControl
 
         public void UpdateTime()
         {
-            _videoTimer.Update(TimeSpan.FromMilliseconds(_currentVideoTime));
+            _videoTimer.Update(TimeSpan.FromMilliseconds(_loadedVideoTime));
         }
 
         public void ToggleFan()
@@ -190,11 +193,11 @@ namespace HTFanControl
                 if (success)
                 {
                     _isPlaying = _mediaPlayer.IsPlaying;
-                    _currentVideoTime = _mediaPlayer.VideoTime;
+                    _loadedVideoTime = _mediaPlayer.VideoTime;
 
-                    if (_currentVideoFileName != _mediaPlayer.FileName)
+                    if (_loadedVideoFilename != _mediaPlayer.FileName)
                     {
-                        _currentVideoFileName = _mediaPlayer.FileName;
+                        _loadedVideoFilename = _mediaPlayer.FileName;
                         LoadVideoTimecodes(_mediaPlayer.FileName, _mediaPlayer.FilePath);
 
                         if (_videoTimer != null)
@@ -342,6 +345,12 @@ namespace HTFanControl
 
             if (!string.IsNullOrEmpty(validFilePath))
             {
+                if (validFilePath != _currentWindtrackPath)
+                {
+                    _currentWindtrackPath = validFilePath;
+                    _offsetEnabled = false;
+                }
+
                 _windtrackError = null;
 
                 _videoTimeCodes = new List<Tuple<TimeSpan, string>>();
@@ -349,6 +358,7 @@ namespace HTFanControl
 
                 string[] lines = File.ReadAllLines(validFilePath);
                 _offset = 0;
+                _hasOffset = false;
                 string lastCmd = "OFF";
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
@@ -364,7 +374,7 @@ namespace HTFanControl
                         _windTrackHeader += line.TrimStart(new[] { '#', ' ' }) + "<br \\>";
 
                         //offset line
-                        if (line.Contains("Offset:"))
+                        if (line.ToLower().Contains("offset:"))
                         {
                             try
                             {
@@ -375,7 +385,11 @@ namespace HTFanControl
                             catch { }
                         }
 
-                        if (line.Contains("ignoreorder"))
+                        if (line.ToLower().Contains("enableoffset"))
+                        {
+                            _offsetEnabled = true;
+                        }
+                        if (line.ToLower().Contains("ignoreorder"))
                         {
                             verifyOrder = false;
                         }

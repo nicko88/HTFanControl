@@ -143,7 +143,7 @@ namespace HTFanControl
                 {
                     Console.WriteLine($"Match Found: {matchTime:G}");
                     //Log.WriteLine($"Match Found: {matchTime:G}");
-                    _hTFanControl._currentVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
+                    _hTFanControl._loadedVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
                     _hTFanControl.UpdateTime();
                     _lastMatchTime = matchTime;
                 }

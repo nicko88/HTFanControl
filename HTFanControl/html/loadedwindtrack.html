@@ -32,6 +32,10 @@
 			touch-action: pinch-zoom pan-y;
 		}
 
+        a:hover {
+            color: white;
+        }
+
 		button{
 			width: 200px;
 			height: 50px;
@@ -60,10 +64,18 @@
 			text-align: center;
 		}
 
-		.nav-link {
-			padding-left: 0;
-			padding-right: 0;
-		}
+        .nav-tabs .nav-link.active {
+            color: lightgreen;
+            font-weight: bold;
+        }
+
+        .nav-link {
+            padding-left: 0;
+            padding-right: 0;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            color: white;
+        }
 	</style>
 </head>
 <body>
@@ -71,10 +83,10 @@
 
 		<ul class="nav nav-tabs bg-dark sticky-top">
 			<li class="nav-item">
-				<a class="nav-link text-muted" href="/">Status</a>
+				<a class="nav-link" href="/">Status</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link active bg-dark text-white" href="fantester">Loaded Wind Track</a>
+				<a class="nav-link active bg-dark" href="fantester">Loaded Wind Track</a>
 			</li>
 		</ul>
 
