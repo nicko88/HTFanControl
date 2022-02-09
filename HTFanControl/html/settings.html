@@ -44,6 +44,8 @@
 				LircRemote: document.getElementById('LircRemote').value,
 				MqttIP: document.getElementById('MqttIP').value,
 				MqttPort: document.getElementById('MqttPort').value,
+                MqttUser: document.getElementById('MqttUser').value,
+                MqttPass: document.getElementById('MqttPass').value,
                 MqttOFFtopic: document.getElementById('MqttOFFtopic').value,
                 MqttOFFpayload: document.getElementById('MqttOFFpayload').value,
                 MqttECOtopic: document.getElementById('MqttECOtopic').value,
@@ -203,9 +205,13 @@
             color: white;
         }
 
-		.raspi {
-			/*{showraspi}*/
+		.showlinux {
+			/*{showlinux}*/
 		}
+
+        .hidelinux {
+            /*{hidelinux}*/
+        }
 	</style>
 </head>
 <body>
@@ -216,13 +222,13 @@
 			<a class="nav-link" href="/">Status</a>
 		</li>
 		<li class="nav-item">
-			<a class="nav-link active bg-dark" href="settings">General</a>
+			<a class="nav-link active bg-dark" href="settings">Settings</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" href="logviewer">Log Viewer</a>
 		</li>
 		<li class="nav-item">
 			<a class="nav-link" href="fantester">Fan Tester</a>
-		</li>
-		<li class="nav-item raspi">
-			<a class="nav-link" href="raspiwifi">RasPi WiFi</a>
 		</li>
 	</ul>
 
@@ -236,13 +242,13 @@
 				<input class="form-check-input" type="radio" name="Controller" id="MQTT" value="MQTT" onclick="mqtt()" {MQTT}>
 				<label class="form-check-label" for="MQTT">MQTT</label>
 			</div>
-			<div class="form-check form-check-inline">
+			<div class="form-check form-check-inline hidelinux">
 				<input class="form-check-input" type="radio" name="Controller" id="LIRC" value="LIRC" onclick="lirc()" {LIRC}>
 				<label class="form-check-label" for="LIRC">LIRC</label>
 			</div>
 		</div>
 	</div>
-	<div id="lircDiv">
+	<div id="lircDiv" class="hidelinux">
 		<div class="nrow">
 			<div class="nitem" style="flex-grow: 1;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="number" class="form-control" id="LircPort" value="{LircPort}"></div>
@@ -252,27 +258,31 @@
 
 	<div id="mqttDiv" style="display: none; padding-bottom: 5px;">
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>MQTT Broker IP</b><input type="text" class="form-control" id="MqttIP" value="{MqttIP}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT Broker IP</b><input type="text" class="form-control" id="MqttIP" value="{MqttIP}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>Port (optional)</b><input type="number" class="form-control" id="MqttPort" value="{MqttPort}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 1;"><b>OFF Topic</b><input type="text" class="form-control" id="MqttOFFtopic" value="{MqttOFFtopic}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>MQTT User (optional)</b><input type="text" class="form-control" id="MqttUser" value="{MqttUser}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Password (optional)</b><input type="number" class="form-control" id="MqttPass" value="{MqttPass}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>OFF Topic</b><input type="text" class="form-control" id="MqttOFFtopic" value="{MqttOFFtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>OFF Payload</b><input type="text" class="form-control" id="MqttOFFpayload" value="{MqttOFFpayload}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 1;"><b>ECO Topic</b><input type="text" class="form-control" id="MqttECOtopic" value="{MqttECOtopic}"></div>
+			<div class="nitem" style="flex-grow: 2;"><b>ECO Topic</b><input type="text" class="form-control" id="MqttECOtopic" value="{MqttECOtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>ECO Payload</b><input type="text" class="form-control" id="MqttECOpayload" value="{MqttECOpayload}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 1;"><b>LOW Topic</b><input type="text" class="form-control" id="MqttLOWtopic" value="{MqttLOWtopic}"></div>
+			<div class="nitem" style="flex-grow: 2;"><b>LOW Topic</b><input type="text" class="form-control" id="MqttLOWtopic" value="{MqttLOWtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>LOW Payload</b><input type="text" class="form-control" id="MqttLOWpayload" value="{MqttLOWpayload}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 1;"><b>MED Topic</b><input type="text" class="form-control" id="MqttMEDtopic" value="{MqttMEDtopic}"></div>
+			<div class="nitem" style="flex-grow: 2;"><b>MED Topic</b><input type="text" class="form-control" id="MqttMEDtopic" value="{MqttMEDtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>MED Payload</b><input type="text" class="form-control" id="MqttMEDpayload" value="{MqttMEDpayload}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 1;"><b>HIGH Topic</b><input type="text" class="form-control" id="MqttHIGHtopic" value="{MqttHIGHtopic}"></div>
+			<div class="nitem" style="flex-grow: 2;"><b>HIGH Topic</b><input type="text" class="form-control" id="MqttHIGHtopic" value="{MqttHIGHtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>HIGH Payload</b><input type="text" class="form-control" id="MqttHIGHpayload" value="{MqttHIGHpayload}"></div>
 		</div>
 	</div>
@@ -335,11 +345,12 @@
 
 <div class="nrow">
 <div class="nitem" style="flex-grow: 1;"><button onclick="ConfirmSave()" class="btn btn-primary">Save Settings</button></div>
-<div class="nitem raspi" style="flex-grow: 1;"><button onclick="shutdown()" class="btn btn-danger">Shutdown App</button></div>
 </div>
 
 <br />
 {version}
+<br /><br />
+<br /><br />
 
 </div>
 </body>

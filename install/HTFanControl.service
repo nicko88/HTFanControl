@@ -1,0 +1,9 @@
+[Unit]
+Description=HTFanControl
+After=multi-user.target
+
+[Service]
+ExecStart=/opt/HTFanControl/HTFanControl
+
+[Install]
+WantedBy=multi-user.target

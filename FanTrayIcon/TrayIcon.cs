@@ -1,11 +1,11 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace FanTrayIcon
 {
@@ -43,7 +43,7 @@ namespace FanTrayIcon
             itemWebUI.Click += new EventHandler(itemWebUI_Click);
 
             itemConsole = new ToolStripMenuItem();
-            itemConsole.Text = "Show Console Window";
+            itemConsole.Text = "Show Console Window (Log)";
             itemConsole.CheckOnClick = true;
             itemConsole.Click += new EventHandler(itemConsole_Click);
 

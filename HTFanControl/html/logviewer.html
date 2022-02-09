@@ -2,7 +2,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<title>Check Update</title>
+	<title>Log Viewer</title>
 	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,29 +17,15 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 	<script>
-		function linuxupdate()
+		async function load_data()
 		{
-            fetch('linuxupdate');
-
-			document.getElementById("btnupdate").disabled = true;
-			document.getElementById("btnupdate").innerHTML = "Updating, please wait...";
-
-			setTimeout(checkpage, 10000);
-		}
-
-		function checkpage()
-		{
-			fetch('poll').then(res =>
-			{
-				if(res.ok)
-				{
-					location.reload();
-				}
-			}).catch((error) =>
-			{
-				setTimeout(checkpage, 5000);
-			});
+            const response = await fetch("logdata")
+            const html = await response.text();
+            document.getElementById("data").innerHTML = html;
         }
+
+        load_data();
+        setInterval(load_data, 1000);
 	</script>
 	<style>
 		* {
@@ -49,11 +35,6 @@
         a:hover {
             color: white;
         }
-
-		button{
-			width: 200px;
-			height: 50px;
-		}
 
 		body {
 			color: white;
@@ -103,11 +84,14 @@
 				<a class="nav-link" href="settings">Settings</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link active bg-dark" href="checkupdate">Update</a>
+				<a class="nav-link active bg-dark" href="logviewer">Log Viewer</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="fantester">Fan Tester</a>
 			</li>
 		</ul>
 
-		{body}
+		<div id="data"></div>
 
 	</div>
 </body>

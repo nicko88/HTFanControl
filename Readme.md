@@ -1,3 +1,4 @@
+
 # HTFanControl
 #### 4D Theater Wind Effect - DIY Home Theater Project
 
@@ -16,6 +17,19 @@ There is a great project guide on the wiki [here](https://github.com/nicko88/HTF
 Otherwise come join the community forum thread to ask questions [here](https://www.avsforum.com/forum/28-tweaks-do-yourself/3152346-4d-theater-wind-effect-diy-home-theater-project.html).
 
 You can find help from me (user: [SirMaster](https://www.avsforum.com/forum/members/8147918-sirmaster.html)) or other users of HTFanControl there.
+
+### Raspberry Pi / Linux Installation
+This install script is intended to install HTFanControl on RasPi or standard Linux running a Debian-based distribution using systemd.  It may work on other distributions but it has not been tested.  You can also download the Linux release and install it manually onto your particular Linux machine.
+
+This script will ask to install HTFanControl and also additionally mosquitto MQTT broker which is needed to control the fan relay switch over the network.
+#### Install
+    sudo wget https://raw.githubusercontent.com/nicko88/HTFanControl/master/install/install.sh && sudo bash install.sh
+#### Update
+There is an update function built into the app at the bottom of the Settings screen, or you can run the update script manually here:
+
+    sudo wget https://raw.githubusercontent.com/nicko88/HTFanControl/master/install/update.sh && sudo bash update.sh
+#### Uninstall
+    sudo wget https://raw.githubusercontent.com/nicko88/HTFanControl/master/install/uninstall.sh && sudo bash uninstall.sh
 
 ### Wind Tracks
 

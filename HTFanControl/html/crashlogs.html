@@ -2,7 +2,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-	<title>RasPi WiFi Settings</title>
+	<title>Crashlogs</title>
 	<link rel="manifest" href='data:application/manifest+json,{"name": "HTFanControl","short_name": "HTFanControl","lang": "en-US","start_url": " / ","scope": " / ","display": "fullscreen"}' />
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,26 +17,20 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 	<script>
-		function Save()
+		function viewcrashlog(filename)
+		{
+            document.getElementById('filename').value = filename;
+            document.getElementById('crashlog').submit();
+		}
+
+		function deletelogs()
 		{
             var r = confirm("Are you sure?");
 			if (r == true)
 			{
-				const data = {
-                    ssid: document.getElementById('ssid').value,
-                    password: document.getElementById('password').value
-				};
-
-				fetch('savewifi', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(data),
-				});
-
-				window.location.href = "/";
-			}
+				fetch('deletelogs');
+                window.location.href = "logviewer";
+            }
         }
 
 	</script>
@@ -48,40 +42,29 @@
         a:hover {
             color: white;
         }
-		
+
 		body {
 			color: white;
 			background-color: black;
 		}
 
-		.ngroup {
-            outline: 1px solid gray;
-            padding-top: 6px;
-            padding-left: 4px;
-            padding-right: 4px;
-            margin-bottom: 8px;
-			display: table;
-        }
-		
-		.nrow {
-            display: flex;
-        }
-		
-		.nitem {
-            margin-bottom: 6px;
-            flex-shrink: 1;
-        }
-		
-		ul {
-            display: flex;
-            margin-left: -15px;
-            margin-right: -15px;
+        span {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            padding-left: 8px;
+            padding-right: 8px;
         }
 
-        li {
-            flex-grow: 1;
-            text-align: center;
-        }
+		ul {
+			display: flex;
+			margin-left: -15px;
+			margin-right: -15px;
+		}
+
+		li {
+			flex-grow: 1;
+			text-align: center;
+		}
 
         .nav-tabs .nav-link.active {
             color: lightgreen;
@@ -98,33 +81,34 @@
 	</style>
 </head>
 <body>
-<div class="container body-content">
+	<div class="container body-content">
 
-	<ul class="nav nav-tabs bg-dark sticky-top">
-		<li class="nav-item">
-			<a class="nav-link" href="/">Status</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link" href="settings">General</a>
-		</li>
-		<li class="nav-item">
-			<a class="nav-link active bg-dark" href="raspiwifi">RasPi WiFi</a>
-		</li>
-	</ul>
+		<ul class="nav nav-tabs bg-dark sticky-top">
+			<li class="nav-item">
+				<a class="nav-link" href="/">Status</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="settings">Settings</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" href="logviewer">Log Viewer</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link active bg-dark" href="crashlogs">Crashlogs</a>
+			</li>
+		</ul>
 
+		Click an item below to view the crashlog.
 
-<h3>WiFi Settings</h3>
-<div class="form-row ngroup">
-<div class="nrow">
-	<div class="nitem" style="flex-grow: 2;"><b>SSID</b><input type="text" class="form-control" id="ssid" value="{ssid}"></div>
-</div>
+		{body}
 
-<div class="nrow">
-	<div class="nitem" style="flex-grow: 1;"><b>Password</b><input type="text" class="form-control" id="password" value="{password}"></div>
-</div>
+		<br/>
+		<button onclick="deletelogs()" class="btn btn-danger">Delete All Crashlogs</button>
 
-</div>
-	<button onclick="Save()" class="btn btn-primary">Save Settings</button>
-</div>
+		<form method="post" id="crashlog" action="viewcrashlog">
+			<input type="hidden" id="filename" name="filename" value="">
+		</form>
+
+	</div>
 </body>
 </html>

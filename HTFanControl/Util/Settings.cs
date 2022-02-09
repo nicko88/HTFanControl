@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace HTFanControl
+namespace HTFanControl.Util
 {
     class Settings
     {
-        private static readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
         public string MediaPlayerType { get; set; }
         public string MediaPlayerIP { get; set; }
         public int MediaPlayerPort { get; set; }
@@ -18,6 +16,8 @@ namespace HTFanControl
         public string LIRC_Remote { get; set; }
         public string MQTT_IP { get; set; }
         public int MQTT_Port { get; set; }
+        public string MQTT_User { get; set; }
+        public string MQTT_Pass { get; set; }
         public string MQTT_OFF_Topic { get; set; }
         public string MQTT_OFF_Payload { get; set; }
         public string MQTT_ECO_Topic { get; set; }
@@ -50,16 +50,27 @@ namespace HTFanControl
                 options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
                 options.WriteIndented = true;
 
-                string jsonSettings = File.ReadAllText(Path.Combine(_rootPath, "HTFanControlSettings.json"));
+                string jsonSettings = File.ReadAllText(Path.Combine(ConfigHelper._rootPath, "HTFanControlSettings.json"));
                 settings = JsonSerializer.Deserialize<Settings>(jsonSettings, options);
             }
             catch
             {
                 //default values
                 settings.MediaPlayerType = "Kodi";
-                settings.MediaPlayerIP = "127.0.0.1";
+                settings.MediaPlayerIP = "192.168.1.100";
                 settings.MediaPlayerPort = 8080;
                 settings.ControllerType = "MQTT";
+                settings.MQTT_IP = "127.0.0.1";
+                settings.MQTT_OFF_Topic = "cmnd/HTFan/EVENT";
+                settings.MQTT_OFF_Payload = "s0";
+                settings.MQTT_ECO_Topic = "cmnd/HTFan/EVENT";
+                settings.MQTT_ECO_Payload = "s1";
+                settings.MQTT_LOW_Topic = "cmnd/HTFan/EVENT";
+                settings.MQTT_LOW_Payload = "s2";
+                settings.MQTT_MED_Topic = "cmnd/HTFan/EVENT";
+                settings.MQTT_MED_Payload = "s3";
+                settings.MQTT_HIGH_Topic = "cmnd/HTFan/EVENT";
+                settings.MQTT_HIGH_Payload = "s4";
                 settings.GlobalOffsetMS = 2000;
                 settings.SpinupOffsetMS = 750;
                 settings.SpindownOffsetMS = 250;
@@ -79,7 +90,7 @@ namespace HTFanControl
 
                 string jsonSettings = JsonSerializer.Serialize(settings, options);
 
-                File.WriteAllText(Path.Combine(_rootPath, "HTFanControlSettings.json"), jsonSettings);
+                File.WriteAllText(Path.Combine(ConfigHelper._rootPath, "HTFanControlSettings.json"), jsonSettings);
             }
             catch(Exception e)
             {

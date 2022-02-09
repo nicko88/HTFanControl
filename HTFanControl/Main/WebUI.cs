@@ -14,14 +14,16 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using OpenTK.Audio.OpenAL;
 using System.IO.Compression;
+using HTFanControl.Util;
 
-namespace HTFanControl
+namespace HTFanControl.Main
 {
     class WebUI
     {
         private readonly string _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
+        private bool _webUIEnabled = true;
         private bool _waitForFile = false;
 
         public WebUI()
@@ -38,7 +40,7 @@ namespace HTFanControl
             listener.Prefixes.Add("http://*:5500/");
             listener.Start();
 
-            while (true)
+            while (_webUIEnabled)
             {
                 IAsyncResult result = listener.BeginGetContext(new AsyncCallback(ProcessRequest), listener);
                 result.AsyncWaitHandle.WaitOne();
@@ -82,12 +84,6 @@ namespace HTFanControl
                         break;
                     case "/savesettings":
                         SaveSettings(request);
-                        break;
-                    case "/raspiwifi":
-                        htmlResponse = RasPiWiFiPage();
-                        break;
-                    case "/savewifi":
-                        SaveWiFi(request);
                         break;
                     case "/downloadlist":
                         htmlResponse = DownloadListPage(request);
@@ -154,6 +150,25 @@ namespace HTFanControl
                     case "/loadedwindtrackdata":
                         htmlResponse = LoadedWindTrackData();
                         break;
+                    case "/logviewer":
+                        htmlResponse = GetHtml("logviewer");
+                        break;
+                    case "/logdata":
+                        htmlResponse = LogData();
+                        break;
+                    case "/crashlogs":
+                        htmlResponse = CrashlogsPage();
+                        break;
+                    case "/viewcrashlog":
+                        htmlResponse = ViewCrashlog(request);
+                        break;
+                    case "/deletelogs":
+                        try
+                        {
+                            Directory.Delete(Path.Combine(ConfigHelper._rootPath, "crashlogs"), true);
+                        }
+                        catch { }
+                        break;
                     case "/selectvideo":
                         htmlResponse = SelectVideoPage();
                         break;
@@ -169,9 +184,8 @@ namespace HTFanControl
                     case "/checkupdate":
                         htmlResponse = CheckUpdatePage();
                         break;
-                    case "/raspiupdate":
-                        ($"nohup {Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), "updater.sh")} &>/dev/null &").Bash();
-                        Environment.Exit(0);
+                    case "/linuxupdate":
+                        LinuxUpdate();
                         break;
                     case "/shutdown":
                         Environment.Exit(0);
@@ -294,7 +308,7 @@ namespace HTFanControl
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename))
+                    if (!string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename) && _HTFanCtrl._loadedVideoFilename != "Loading Video Fingerprints...")
                     {
                         htmlData.AppendLine("No wind track file found named: " + _HTFanCtrl._loadedVideoFilename + ".txt");
                         htmlData.AppendLine("<br /><br />");
@@ -332,11 +346,13 @@ namespace HTFanControl
 
             if (ConfigHelper.GetOS() == "win")
             {
-                html = html.Replace("/*{showraspi}*/", "display: none;");
+                html = html.Replace("/*{showlinux}*/", "display: none;");
+                html = html.Replace("/*{hidelinux}*/", "display: initial;");
             }
             else
             {
-                html = html.Replace("/*{showraspi}*/", "display: initial;");
+                html = html.Replace("/*{showlinux}*/", "display: initial;");
+                html = html.Replace("/*{hidelinux}*/", "display: none;");
             }
 
             if (_HTFanCtrl._settings.ControllerType == "LIRC")
@@ -354,6 +370,9 @@ namespace HTFanControl
 
             html = html.Replace("{MqttIP}", _HTFanCtrl._settings.MQTT_IP);
             html = html.Replace("{MqttPort}", _HTFanCtrl._settings.MQTT_Port.ToString());
+
+            html = html.Replace("{MqttUser}", _HTFanCtrl._settings.MQTT_User);
+            html = html.Replace("{MqttPass}", _HTFanCtrl._settings.MQTT_Pass);
 
             html = html.Replace("{MqttOFFtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Topic));
             html = html.Replace("{MqttOFFpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Payload));
@@ -444,6 +463,8 @@ namespace HTFanControl
                 _HTFanCtrl._settings.LIRC_Remote = data.RootElement.GetProperty("LircRemote").GetString();
                 _HTFanCtrl._settings.MQTT_IP = data.RootElement.GetProperty("MqttIP").GetString();
                 _HTFanCtrl._settings.MQTT_Port = int.TryParse(data.RootElement.GetProperty("MqttPort").GetString(), out int MqttPort) ? MqttPort : 1883;
+                _HTFanCtrl._settings.MQTT_User = data.RootElement.GetProperty("MqttUser").GetString();
+                _HTFanCtrl._settings.MQTT_Pass = data.RootElement.GetProperty("MqttPass").GetString();
                 _HTFanCtrl._settings.MQTT_OFF_Topic = data.RootElement.GetProperty("MqttOFFtopic").GetString();
                 _HTFanCtrl._settings.MQTT_OFF_Payload = data.RootElement.GetProperty("MqttOFFpayload").GetString();
                 _HTFanCtrl._settings.MQTT_ECO_Topic = data.RootElement.GetProperty("MqttECOtopic").GetString();
@@ -464,59 +485,6 @@ namespace HTFanControl
 
                 Settings.SaveSettings(_HTFanCtrl._settings);
                 _HTFanCtrl.ReInitialize(true);
-            }
-        }
-
-        private static string RasPiWiFiPage()
-        {
-            string html = GetHtml("raspiwifi");
-            try
-            {
-                string netplan = ("cat /etc/netplan/50-cloud-init.yaml").Bash();
-
-                int ssidStart = netplan.IndexOf("access-points:") + 30;
-                int ssidEnd = netplan.IndexOf("password:") - 19;
-                string ssid = netplan[ssidStart..ssidEnd];
-
-                int passwordStart = netplan.IndexOf("password:") + 10;
-                int passwordEnd = netplan.Length - 1;
-                string password = netplan[passwordStart..passwordEnd];
-
-                html = html.Replace("{ssid}", ssid);
-                html = html.Replace("{password}", password);
-            }
-            catch { }
-
-            return html;
-        }
-
-        private static void SaveWiFi(HttpListenerRequest request)
-        {
-            string wifiInfoJSON = GetPostBody(request);
-
-            if (!string.IsNullOrEmpty(wifiInfoJSON))
-            {
-                string netplan = "";
-                try
-                {
-                    Assembly assembly = Assembly.GetExecutingAssembly();
-                    string resourceName = assembly.GetManifestResourceNames().Single(str => str.EndsWith("50-cloud-init.yaml"));
-
-                    using Stream stream = assembly.GetManifestResourceStream(resourceName);
-                    using StreamReader reader = new StreamReader(stream);
-                    netplan = reader.ReadToEnd();
-                }
-                catch { }
-
-                using JsonDocument data = JsonDocument.Parse(wifiInfoJSON);
-                string ssid = data.RootElement.GetProperty("ssid").GetString();
-                string password = data.RootElement.GetProperty("password").GetString();
-
-                netplan = netplan.Replace("{ssid}", ssid);
-                netplan = netplan.Replace("{pass}", password);
-
-                ($"echo \"{netplan}\" > /etc/netplan/50-cloud-init.yaml").Bash();
-                "netplan apply".Bash();
             }
         }
 
@@ -543,9 +511,9 @@ namespace HTFanControl
 
                 if (_version != latest)
                 {
-                    if (ConfigHelper.GetOS() == "raspi")
+                    if (ConfigHelper.GetOS() != "win")
                     {
-                        sb.AppendLine(@"<button id=""btnupdate"" onclick=""raspiupdate();"" class=""btn btn-primary"">Update HTFanControl</button>");
+                        sb.AppendLine(@"<button id=""btnupdate"" onclick=""linuxupdate();"" class=""btn btn-primary"">Update HTFanControl</button>");
                     }
                     else
                     {
@@ -562,6 +530,14 @@ namespace HTFanControl
             catch { }
 
             return html;
+        }
+
+        private void LinuxUpdate()
+        {
+            $"wget -O {Path.Combine(ConfigHelper._rootPath, "update.sh")} https://raw.githubusercontent.com/nicko88/HTFanControl/master/install/update.sh".Bash();
+            $"bash {Path.Combine(ConfigHelper._rootPath, "update.sh")}".Bash();
+
+            _webUIEnabled = false;
         }
 
         private static string DownloadListPage(HttpListenerRequest request)
@@ -617,7 +593,7 @@ namespace HTFanControl
             return html;
         }
 
-        private string DownloadPage(HttpListenerRequest request)
+        private static string DownloadPage(HttpListenerRequest request)
         {
             string html = GetHtml("download");
             string downloadInfo = GetPostBody(request);
@@ -632,10 +608,10 @@ namespace HTFanControl
 
                     using WebClient client = new WebClient();
                     client.Headers.Add("User-Agent", ".netapp");
-                    client.DownloadFile(url, Path.Combine(_HTFanCtrl._rootPath, "tmp", filename[1] + ".zip"));
+                    client.DownloadFile(url, Path.Combine(ConfigHelper._rootPath, "tmp", filename[1] + ".zip"));
 
                     string windCodes = "";
-                    using ZipArchive zip = ZipFile.Open(Path.Combine(_HTFanCtrl._rootPath, "tmp", filename[1] + ".zip"), ZipArchiveMode.Read);
+                    using ZipArchive zip = ZipFile.Open(Path.Combine(ConfigHelper._rootPath, "tmp", filename[1] + ".zip"), ZipArchiveMode.Read);
                     foreach (ZipArchiveEntry entry in zip.Entries)
                     {
                         if (entry.Name == "commands.txt")
@@ -664,7 +640,7 @@ namespace HTFanControl
             }
             string html = GetHtml("manage");
 
-            string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "windtracks"));
+            string[] files = Directory.GetFiles(Path.Combine(ConfigHelper._rootPath, "windtracks"));
             List<string> fileList = new List<string>(files);
             fileList.Sort();
 
@@ -679,7 +655,7 @@ namespace HTFanControl
             return html;
         }
 
-        private string EditPage(HttpListenerRequest request)
+        private static string EditPage(HttpListenerRequest request)
         {
             string html = GetHtml("edit");
             string editInfo = GetPostBody(request);
@@ -693,11 +669,11 @@ namespace HTFanControl
                 {
                     if (values[1].EndsWith(".txt"))
                     {
-                        windCodes = File.ReadAllText(Path.Combine(_HTFanCtrl._rootPath, "windtracks", HttpUtility.UrlDecode(values[1])));
+                        windCodes = File.ReadAllText(Path.Combine(ConfigHelper._rootPath, "windtracks", HttpUtility.UrlDecode(values[1])));
                     }
                     else
                     {
-                        using ZipArchive zip = ZipFile.Open(Path.Combine(_HTFanCtrl._rootPath, "windtracks", HttpUtility.UrlDecode(values[1])), ZipArchiveMode.Read);
+                        using ZipArchive zip = ZipFile.Open(Path.Combine(ConfigHelper._rootPath, "windtracks", HttpUtility.UrlDecode(values[1])), ZipArchiveMode.Read);
                         foreach (ZipArchiveEntry entry in zip.Entries)
                         {
                             if (entry.Name == "commands.txt")
@@ -726,7 +702,7 @@ namespace HTFanControl
 
             try
             {
-                SaveUploadFile(request, Path.Combine(_HTFanCtrl._rootPath, "windtracks", filename));
+                SaveUploadFile(request, Path.Combine(ConfigHelper._rootPath, "windtracks", filename));
             }
             catch { }
         }
@@ -740,7 +716,7 @@ namespace HTFanControl
                 try
                 {
                     string ext = Path.GetExtension(renameInfo);
-                    File.Move(Path.Combine(_HTFanCtrl._rootPath, "windtracks", renameInfo), Path.Combine(_HTFanCtrl._rootPath, "windtracks", _HTFanCtrl._loadedVideoFilename + ext), true);
+                    File.Move(Path.Combine(ConfigHelper._rootPath, "windtracks", renameInfo), Path.Combine(ConfigHelper._rootPath, "windtracks", _HTFanCtrl._loadedVideoFilename + ext), true);
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(false);
@@ -757,7 +733,7 @@ namespace HTFanControl
             {
                 try
                 {
-                    File.Delete(Path.Combine(_HTFanCtrl._rootPath, "windtracks", deleteInfo));
+                    File.Delete(Path.Combine(ConfigHelper._rootPath, "windtracks", deleteInfo));
                 }
                 catch { }
                 _HTFanCtrl.ReInitialize(false);
@@ -778,7 +754,7 @@ namespace HTFanControl
 
                 try
                 {
-                    File.Move(Path.Combine(_HTFanCtrl._rootPath, "tmp", saveInfo + ".zip"), Path.Combine(_HTFanCtrl._rootPath, "windtracks", fileName + ".zip"), true);
+                    File.Move(Path.Combine(ConfigHelper._rootPath, "tmp", saveInfo + ".zip"), Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".zip"), true);
                 }
                 catch { }
 
@@ -840,7 +816,10 @@ namespace HTFanControl
 
                 foreach (string device in devices)
                 {
-                    sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""Select('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{0}</span>" + "\n", device);
+                    if (device != "ALSA Default")
+                    {
+                        sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""Select('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{0}</span>" + "\n", device);
+                    }
                 }
             }
             catch
@@ -885,6 +864,8 @@ namespace HTFanControl
 
             if (_HTFanCtrl._videoTimeCodes != null)
             {
+                sb.Append(@"<div class=""text-monospace"">");
+
                 for (int i = 0; i < _HTFanCtrl._videoTimeCodes.Count; i++)
                 {
                     if(i == _HTFanCtrl._curCmdIndex)
@@ -901,6 +882,8 @@ namespace HTFanControl
 
                     sb.AppendLine("<br />");
                 }
+
+                sb.Append("</div>");
             }
             else
             {
@@ -910,11 +893,83 @@ namespace HTFanControl
             return sb.ToString();
         }
 
-        private string SelectVideoPage()
+        private string LogData()
+        {
+            string timeMsg = "Current time: ";
+            if (_HTFanCtrl._settings.MediaPlayerType == "Audio")
+            {
+                timeMsg = "Last time match: ";
+            }
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("<br />");
+            sb.AppendLine(@"<a href=""crashlogs"">(View Crashlogs)</a>");
+            sb.AppendLine("<br /><br />");
+
+            sb.AppendLine(GetCurrentMovie());
+            sb.AppendLine("<br /><br />");
+            sb.AppendLine(timeMsg + TimeSpan.FromMilliseconds(_HTFanCtrl._loadedVideoTime).ToString("G").Substring(2, 12));
+            sb.AppendLine("<br /><br />");
+
+            sb.Append(@"<div class=""text-monospace"" style=""font-size: 0.75rem;"">");
+
+            foreach (string s in _HTFanCtrl._log.RealtimeLog)
+            {
+                sb.AppendLine(s);
+                sb.AppendLine("<br />");
+            }
+
+            sb.Append("</div>");
+
+            return sb.ToString();
+        }
+
+        private static string CrashlogsPage()
+        {
+            string html = GetHtml("crashlogs");
+            string[] crashlogs = new string[0];
+            try
+            {
+                crashlogs = Directory.GetFiles(Path.Combine(ConfigHelper._rootPath, "crashlogs"));
+            }
+            catch { }
+
+            StringBuilder sb = new StringBuilder();
+            foreach (string s in crashlogs)
+            {
+                sb.AppendFormat(@"<span style=""padding: 4px 8px;"" onclick=""viewcrashlog('{0}')"" class=""list-group-item list-group-item-action list-group-item-dark"">{1}</span>" + "\n", Path.GetFileName(s), Path.GetFileName(s).Replace(".txt", ""));
+            }
+
+            html = html.Replace("{body}", sb.ToString());
+
+            return html;
+        }
+
+        private string ViewCrashlog(HttpListenerRequest request)
+        {
+            string html = "";
+            string crashlogName = GetPostBody(request);
+
+            if (!string.IsNullOrEmpty(crashlogName))
+            {
+                string[] values = crashlogName.Split('=');
+
+                try
+                {
+                    html = File.ReadAllText(Path.Combine(ConfigHelper._rootPath, "crashlogs", values[1]));
+                }
+                catch { }
+            }
+
+            return html;
+        }
+
+        private static string SelectVideoPage()
         {
             string html = GetHtml("selectvideo");
 
-            string[] files = Directory.GetFiles(Path.Combine(_HTFanCtrl._rootPath, "windtracks"));
+            string[] files = Directory.GetFiles(Path.Combine(ConfigHelper._rootPath, "windtracks"));
             List<string> fileList = new List<string>(files);
             fileList.Sort();
 
@@ -967,7 +1022,7 @@ namespace HTFanControl
         {
             string fanCmdInfo = GetPostBody(request);
 
-            Console.WriteLine($"Sent CMD: {fanCmdInfo}");
+            _HTFanCtrl._log.LogMsg($"Sent CMD: {fanCmdInfo}");
             _HTFanCtrl._fanController.SendCMD(fanCmdInfo);
         }
 

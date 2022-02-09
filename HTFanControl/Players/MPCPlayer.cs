@@ -1,11 +1,11 @@
-﻿using HTFanControl.Players;
-using System;
+﻿using System;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Web;
+using HTFanControl.Util;
 
-namespace HTFanControl
+namespace HTFanControl.Players
 {
     class MPCPlayer : IPlayer
     {

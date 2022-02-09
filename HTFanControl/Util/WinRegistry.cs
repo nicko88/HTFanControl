@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
 
-namespace HTFanControl
+namespace HTFanControl.Util
 {
     class WinRegistry
     {

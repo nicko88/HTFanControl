@@ -6,9 +6,9 @@
 	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
 	<Configurations>Debug;ReleaseWin;ReleaseLinux</Configurations>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <AssemblyVersion>0.2.1.0</AssemblyVersion>
-    <FileVersion>0.2.1.0</FileVersion>
-    <Version>0.2.0</Version>
+    <AssemblyVersion>0.3.0.0</AssemblyVersion>
+    <FileVersion>0.3.0.0</FileVersion>
+    <Version>0.3.0</Version>
     <Description>4D Theater Wind Effect - DIY Home Theater Project</Description>
     <Copyright>nicko88</Copyright>
     <Authors>nicko88</Authors>
@@ -37,16 +37,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="html\50-cloud-init.yaml" />
     <None Remove="html\add.html" />
     <None Remove="html\checkupdate.html" />
+    <None Remove="html\crashlogs.html" />
     <None Remove="html\download.html" />
     <None Remove="html\downloadlist.html" />
     <None Remove="html\edit.html" />
     <None Remove="html\fantester.html" />
     <None Remove="html\loadedwindtrack.html" />
+    <None Remove="html\logviewer.html" />
     <None Remove="html\manage.html" />
-    <None Remove="html\raspiwifi.html" />
     <None Remove="html\selectaudiodevice.html" />
     <None Remove="html\selectplexplayer.html" />
     <None Remove="html\selectvideo.html" />
@@ -55,8 +55,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="html\50-cloud-init.yaml" />
     <EmbeddedResource Include="html\checkupdate.html" />
+    <EmbeddedResource Include="html\crashlogs.html" />
+    <EmbeddedResource Include="html\logviewer.html" />
     <EmbeddedResource Include="html\loadedwindtrack.html" />
     <EmbeddedResource Include="html\selectaudiodevice.html" />
     <EmbeddedResource Include="html\selectplexplayer.html" />
@@ -66,19 +67,18 @@
     <EmbeddedResource Include="html\edit.html" />
     <EmbeddedResource Include="html\manage.html" />
     <EmbeddedResource Include="html\downloadlist.html" />
-    <EmbeddedResource Include="html\raspiwifi.html" />
     <EmbeddedResource Include="html\settings.html" />
     <EmbeddedResource Include="html\selectvideo.html" />
     <EmbeddedResource Include="html\status.html" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.39" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.42" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="MQTTnet" Version="3.1.1" />
+    <PackageReference Include="MQTTnet" Version="3.1.2" />
     <PackageReference Include="OpenTK.OpenAL" Version="4.6.7" />
-    <PackageReference Include="SoundFingerprinting" Version="7.16.0" />
-    <PackageReference Include="SoundFingerprinting.Emy" Version="7.16.0" />
+    <PackageReference Include="SoundFingerprinting" Version="8.4.0" />
+    <PackageReference Include="SoundFingerprinting.Emy" Version="8.3.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWin|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

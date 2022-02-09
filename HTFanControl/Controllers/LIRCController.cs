@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using HTFanControl.Util;
 
 namespace HTFanControl.Controllers
 {
@@ -13,7 +13,6 @@ namespace HTFanControl.Controllers
     {
         private Socket _lircSocket;
         private Dictionary<string, string> _lircMapping;
-        private readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
         private Settings _settings;
 
@@ -154,10 +153,10 @@ namespace HTFanControl.Controllers
         private void LoadLIRCMapping()
         {
             _lircMapping = null;
-            if (File.Exists(Path.Combine(_rootPath, "lircmapping.txt")))
+            if (File.Exists(Path.Combine(ConfigHelper._rootPath, "lircmapping.txt")))
             {
                 _lircMapping = new Dictionary<string, string>();
-                string[] mappingFile = File.ReadAllLines(Path.Combine(_rootPath, "lircmapping.txt"));
+                string[] mappingFile = File.ReadAllLines(Path.Combine(ConfigHelper._rootPath, "lircmapping.txt"));
 
                 foreach (string s in mappingFile)
                 {

@@ -1,23 +1,26 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 
-namespace HTFanControl
+namespace HTFanControl.Util
 {
     public static class ConfigHelper
     {
+        public static readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+
         public static string GetIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                if (ip.AddressFamily == AddressFamily.InterNetwork && !ip.ToString().StartsWith("127"))
                 {
                     return ip.ToString();
                 }
             }
-            return "error";
+            return "IPerror";
         }
 
         public static string GetOS()
@@ -31,6 +34,10 @@ namespace HTFanControl
             else if(OS.Contains("raspi"))
             {
                 OS = "raspi";
+            }
+            else
+            {
+                OS = "linux";
             }
 
             return OS;
@@ -64,6 +71,11 @@ namespace HTFanControl
             WinRegistry.SetMPCHCTimerInterval();
         }
 
+        public static void SetupLinux()
+        {
+            $"chmod -R 7777 {_rootPath}".Bash();
+        }
+
         public static string RunCmd(string filename, string arguments, bool admin)
         {
             Process process = new Process();
@@ -95,6 +107,30 @@ namespace HTFanControl
             catch { }
 
             return output;
+        }
+    }
+
+    public static class ShellHelper
+    {
+        public static string Bash(this string cmd)
+        {
+            string escapedArgs = cmd.Replace("\"", "\\\"");
+
+            Process process = new Process()
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/bin/bash",
+                    Arguments = $"-c \"{escapedArgs}\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+            process.Start();
+            string result = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            return result;
         }
     }
 }

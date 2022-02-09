@@ -3,6 +3,7 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using System;
 using System.Threading;
+using HTFanControl.Util;
 
 namespace HTFanControl.Controllers
 {
@@ -38,6 +39,7 @@ namespace HTFanControl.Controllers
 
                 IMqttClientOptions options = new MqttClientOptionsBuilder()
                     .WithTcpServer(_settings.MQTT_IP, port)
+                    .WithCredentials(_settings.MQTT_User, _settings.MQTT_Pass)
                     .Build();
 
                 IAsyncResult result = _mqttClient.ConnectAsync(options);
@@ -114,7 +116,6 @@ namespace HTFanControl.Controllers
                 else
                 {
                     mqttPayload = "";
-                    Console.WriteLine("(Ignored OFF Command)");
                 }
             }
 

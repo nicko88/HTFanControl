@@ -12,8 +12,9 @@ using OpenTK.Audio.OpenAL;
 using System.IO;
 using System.Net.Http;
 using System.Linq;
+using HTFanControl.Util;
 
-namespace HTFanControl
+namespace HTFanControl.Main
 {
     class AudioSync
     {
@@ -45,7 +46,7 @@ namespace HTFanControl
         {
             _hTFanControl = hTFanControl;
 
-            if(File.Exists(Path.Combine(_hTFanControl._rootPath, "testaccuracy.txt")))
+            if(File.Exists(Path.Combine(ConfigHelper._rootPath, "testaccuracy.txt")))
             {
                 verifyAccuracy = true;
             }
@@ -71,8 +72,7 @@ namespace HTFanControl
         {
             if (_modelService != null)
             {
-                Console.WriteLine("Stop Listening...");
-                //Log.WriteLine("Stop Listening...");
+                _hTFanControl._log.LogMsg("Stop Listening...");
             }
 
             _state = "";
@@ -94,9 +94,9 @@ namespace HTFanControl
             string validFilePath = null;
             try
             {
-                if (File.Exists(Path.Combine(_hTFanControl._rootPath, "tmp", fileName + ".fingerprints")))
+                if (File.Exists(Path.Combine(new string[] { ConfigHelper._rootPath, "tmp", "fingerprint", "audio" })))
                 {
-                    validFilePath = Path.Combine(_hTFanControl._rootPath, "tmp", fileName + ".fingerprints");
+                    validFilePath = Path.Combine(new string[] { ConfigHelper._rootPath, "tmp", "fingerprint" });
                 }
 
                 _modelService = new InMemoryModelService(validFilePath);
@@ -111,8 +111,7 @@ namespace HTFanControl
         {
             _realtimeSource = new BlockingCollection<AudioSamples>();
 
-            Console.WriteLine("Start Listening...");
-            //Log.WriteLine("Start Listening...");
+            _hTFanControl._log.LogMsg("Start Listening...");
             _state = "(listening...)";
 
             try
@@ -129,31 +128,29 @@ namespace HTFanControl
                 ResultEntry resultEntry = aVQueryResult.ResultEntries.First().Audio;
 
                 _timeJump = false;
-                TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength + TimeSpan.FromMilliseconds(aVQueryResult.QueryCommandStats.Audio.TotalDurationMilliseconds).TotalSeconds + 0.12);
+                TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength + 0.12 /*+ TimeSpan.FromMilliseconds(aVQueryResult.QueryCommandStats.Audio.TotalDurationMilliseconds).TotalSeconds*/);
 
                 if (matchTime > _lastMatchTime.Add(TimeSpan.FromMinutes(5)) || matchTime < _lastMatchTime.Subtract(TimeSpan.FromMinutes(5)))
                 {
                     _timeJump = true;
                     _lastMatchTime = matchTime;
-                    Console.WriteLine("Time Jump Detected");
-                    //Log.WriteLine("Time Jump Detected");
+                    _hTFanControl._log.LogMsg("Time Jump Detected");
                 }
 
                 if (!_timeJump)
                 {
-                    Console.WriteLine($"Match Found: {matchTime:G}");
-                    //Log.WriteLine($"Match Found: {matchTime:G}");
+                    _hTFanControl._log.LogMsg($"Match Found: {matchTime.ToString("G").Substring(2, 12)}");
                     _hTFanControl._loadedVideoTime = Convert.ToInt64(matchTime.TotalMilliseconds);
                     _hTFanControl.UpdateTime();
                     _lastMatchTime = matchTime;
+
+                    if (verifyAccuracy)
+                    {
+                        VerifyAccuracy(matchTime);
+                    }
                 }
 
                 //_pause.Change(10000, Timeout.Infinite);
-
-                if (verifyAccuracy)
-                {
-                    VerifyAccuracy(matchTime);
-                }
             }
         }
 
@@ -168,20 +165,19 @@ namespace HTFanControl
                 HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
 
-                position = long.Parse(doc.GetElementbyId("position").InnerText);
+                position = long.Parse(doc.GetElementbyId("position").InnerText) + 21;
             }
             catch { }
 
             TimeSpan playerTime = TimeSpan.FromMilliseconds(position);
-            string matchResult = $"Accuracy:{audioTime.Subtract(playerTime).TotalMilliseconds} AudioTime:{audioTime:G} PlayerTime:{playerTime:G}";
-            Console.WriteLine(matchResult);
-            //Log.WriteLine(matchResult);
+            string matchResult = $"Accuracy:{audioTime.Subtract(playerTime).TotalMilliseconds} AudioTime:{audioTime.ToString("G").Substring(2, 12)} PlayerTime:{playerTime.ToString("G").Substring(2, 12)}";
+            _hTFanControl._log.LogMsg(matchResult);
         }
 
         //private void Pause(object o)
         //{
         //    _pause.Change(Timeout.Infinite, Timeout.Infinite);
-        //    Console.WriteLine("PAUSED");
+        //    _hTFanControl._log.LogMsg("PAUSED");
         //}
 
         private void RecordOpenTK(object cancellationToken)
@@ -243,6 +239,7 @@ namespace HTFanControl
                                     {
                                         config.ResultEntryFilter = new TrackMatchLengthEntryFilter(3d);
                                         config.SuccessCallback = result => FoundMatch(result);
+                                        config.AutomaticSkipDetection = true;
                                         return config;
                                     })
                                     .UsingServices(_modelService)

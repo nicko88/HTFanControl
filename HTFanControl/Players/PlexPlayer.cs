@@ -1,12 +1,12 @@
-﻿using HTFanControl.Players;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Xml.Linq;
+using HTFanControl.Util;
 
-namespace HTFanControl
+namespace HTFanControl.Players
 {
     class PlexPlayer : IPlayer
     {

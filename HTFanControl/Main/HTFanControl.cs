@@ -1,32 +1,30 @@
-﻿using HTFanControl.Players;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using HTFanControl.Timers;
 using System.IO.Compression;
 using HTFanControl.Controllers;
+using HTFanControl.Players;
+using HTFanControl.Util;
 
-namespace HTFanControl
+namespace HTFanControl.Main
 {
     class HTFanControl
     {
-        public readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-
         public string _errorStatus;
         public string _windtrackError;
-        public long _loadedVideoTime = 0;
+        public long _loadedVideoTime;
         public string _loadedVideoFilename;
         public string _currentWindtrackPath;
         public string _windTrackHeader;
         public int _curCmdIndex = -1;
-        public int _nextCmdIndex = 0;
+        public int _nextCmdIndex;
         public bool _isPlaying = false;
         public bool _isEnabled = true;
         public bool _hasOffset = false;
-        public double _offset = 0;
+        public double _offset;
         public bool _offsetEnabled = false;
 
         public List<Tuple<TimeSpan, string>> _videoTimeCodes;
@@ -39,8 +37,12 @@ namespace HTFanControl
 
         public Settings _settings;
 
+        public Log _log;
+
         public HTFanControl()
         {
+            _log = new Log();
+
             _settings = Settings.LoadSettings();
             Settings.SaveSettings(_settings);
 
@@ -115,7 +117,7 @@ namespace HTFanControl
 
         public async void SelectVideo(string fileName)
         {
-            ExtractWindtrack(Path.Combine(_rootPath, "windtracks", fileName + ".zip"), true);
+            ExtractWindtrack(Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".zip"), true);
 
             _loadedVideoFilename = "Loading Video Fingerprints...";
             _windTrackHeader = "Loading Windtrack...";
@@ -153,11 +155,11 @@ namespace HTFanControl
                 {
                     _errorStatus = _fanController.ErrorStatus;
                 }
-                Console.WriteLine("Fans Disabled");
+                _log.LogMsg("Fans Disabled");
             }
             else
             {
-                Console.WriteLine("Fans Enabled");
+                _log.LogMsg("Fans Enabled");
 
                 _isEnabled = true;
 
@@ -171,7 +173,7 @@ namespace HTFanControl
                             {
                                 _errorStatus = _fanController.ErrorStatus;
                             }
-                            Console.WriteLine($"Sent CMD: {_videoTimeCodes[_curCmdIndex].Item1.ToString("G").Substring(2, 12)},{_videoTimeCodes[_curCmdIndex].Item2}");
+                            _log.LogMsg($"Sent CMD: {_videoTimeCodes[_curCmdIndex].Item1.ToString("G").Substring(2, 12)},{_videoTimeCodes[_curCmdIndex].Item2}");
                         }
                     }
                     catch { }
@@ -262,11 +264,11 @@ namespace HTFanControl
 
             try
             {
-                Console.WriteLine($"Sent CMD: {_videoTimeCodes[i].Item1.ToString("G").Substring(2, 12)},{fanCmd}");
+                _log.LogMsg($"Sent CMD: {_videoTimeCodes[i].Item1.ToString("G").Substring(2, 12)},{fanCmd}");
             }
             catch
             {
-                Console.WriteLine($"Sent CMD: {fanCmd}");
+                _log.LogMsg($"Sent CMD: {fanCmd}");
             }
 
             if (_isEnabled)
@@ -287,9 +289,9 @@ namespace HTFanControl
             //look for windtrack .txt in tmp folder
             try
             {
-                if (File.Exists(Path.Combine(_rootPath, "tmp", fileName + ".txt")))
+                if (File.Exists(Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt")))
                 {
-                    validFilePath = Path.Combine(_rootPath, "tmp", fileName + ".txt");
+                    validFilePath = Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt");
                 }
             }
             catch { }
@@ -297,10 +299,10 @@ namespace HTFanControl
             //look for windtrack .zip archive in windtracks folder
             try
             {
-                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(_rootPath, "windtracks", fileName + ".zip")))
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".zip")))
                 {
-                    ExtractWindtrack(Path.Combine(_rootPath, "windtracks", fileName + ".zip"), false);
-                    validFilePath = Path.Combine(_rootPath, "tmp", fileName + ".txt");
+                    ExtractWindtrack(Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".zip"), false);
+                    validFilePath = Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt");
                 }
             }
             catch { }
@@ -311,7 +313,7 @@ namespace HTFanControl
                 if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(filePath, fileName + ".zip")))
                 {
                     ExtractWindtrack(Path.Combine(filePath, fileName + ".zip"), false);
-                    validFilePath = Path.Combine(_rootPath, "tmp", fileName + ".txt");
+                    validFilePath = Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt");
                 }
             }
             catch { }
@@ -319,9 +321,9 @@ namespace HTFanControl
             //LEGACY look in windtrack folder
             try
             {
-                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(_rootPath, "windtracks", fileName + ".txt")))
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".txt")))
                 {
-                    validFilePath = Path.Combine(_rootPath, "windtracks", fileName + ".txt");
+                    validFilePath = Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".txt");
                 }
             }
             catch { }
@@ -412,14 +414,7 @@ namespace HTFanControl
                         double? timeCode = null;
                         try
                         {
-                            if (isFanCmd)
-                            {
-                                timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds - _settings.GlobalOffsetMS;
-                            }
-                            else
-                            {
-                                timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds;
-                            }
+                            timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds;
                         }
                         catch
                         {
@@ -442,6 +437,11 @@ namespace HTFanControl
                                     }
                                     break;
                                 }
+                            }
+
+                            if (isFanCmd)
+                            {
+                                timeCode = timeCode - _settings.GlobalOffsetMS;
                             }
 
                             rawPrevTime = (double)timeCode;
@@ -506,7 +506,7 @@ namespace HTFanControl
 
         private void ExtractWindtrack(string filePath, bool extractFingerprint)
         {
-            DirectoryInfo tmp = new DirectoryInfo(Path.Combine(_rootPath, "tmp"));
+            DirectoryInfo tmp = new DirectoryInfo(Path.Combine(ConfigHelper._rootPath, "tmp"));
             foreach (FileInfo file in tmp.GetFiles())
             {
                 file.Delete();
@@ -518,11 +518,12 @@ namespace HTFanControl
             {
                 using ZipArchive archive = ZipFile.OpenRead(filePath);
 
-                archive.Entries.Where(e => e.Name.Equals("commands.txt")).Single().ExtractToFile(Path.Combine(_rootPath, "tmp", fileName + ".txt"), true);
+                archive.Entries.Where(e => e.Name.Equals("commands.txt")).Single().ExtractToFile(Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt"), true);
 
                 if (extractFingerprint)
                 {
-                    archive.Entries.Where(e => e.Name.Equals("full.fingerprints")).Single().ExtractToFile(Path.Combine(_rootPath, "tmp", fileName + ".fingerprints"), true);
+                    Directory.CreateDirectory(Path.Combine(ConfigHelper._rootPath, "tmp", "fingerprint"));
+                    archive.Entries.Where(e => e.Name.Equals("full.fingerprints")).Single().ExtractToFile(Path.Combine(new string[] { ConfigHelper._rootPath, "tmp", "fingerprint", "audio" }), true);
                 }
             }
             catch
