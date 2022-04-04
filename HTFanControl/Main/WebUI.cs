@@ -20,7 +20,7 @@ namespace HTFanControl.Main
 {
     class WebUI
     {
-        private readonly string _version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+        private readonly string _version = Assembly.GetExecutingAssembly().GetName().Version.ToString().TrimEnd(new char[] { '.', '0' });
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
         private bool _webUIEnabled = true;
@@ -338,7 +338,7 @@ namespace HTFanControl.Main
         {
             if (_waitForFile)
             {
-                Thread.Sleep(250);
+                Thread.Sleep(500);
                 _waitForFile = false;
             }
 
@@ -441,7 +441,10 @@ namespace HTFanControl.Main
             }
 
             html = html.Replace("{GlobalOffset}", _HTFanCtrl._settings.GlobalOffsetMS.ToString());
-            html = html.Replace("{SpinupOffset}", _HTFanCtrl._settings.SpinupOffsetMS.ToString());
+            html = html.Replace("{ECOSpinupOffset}", _HTFanCtrl._settings.ECOSpinupOffsetMS.ToString());
+            html = html.Replace("{LOWSpinupOffset}", _HTFanCtrl._settings.LOWSpinupOffsetMS.ToString());
+            html = html.Replace("{MEDSpinupOffset}", _HTFanCtrl._settings.MEDSpinupOffsetMS.ToString());
+            html = html.Replace("{HIGHSpinupOffset}", _HTFanCtrl._settings.HIGHSpinupOffsetMS.ToString());
             html = html.Replace("{SpindownOffset}", _HTFanCtrl._settings.SpindownOffsetMS.ToString());
 
             html = html.Replace("{version}", @$"Version: {_version} <a href=""checkupdate"">(Check For Update)</a>");
@@ -478,7 +481,10 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._settings.MediaPlayerPort = int.TryParse(data.RootElement.GetProperty("MediaPlayerPort").GetString(), out int MediaPlayerPort) ? MediaPlayerPort : 0;
                 _HTFanCtrl._settings.GlobalOffsetMS = int.TryParse(data.RootElement.GetProperty("GlobalOffset").GetString(), out int GlobalOffset) ? GlobalOffset : 0;
-                _HTFanCtrl._settings.SpinupOffsetMS = int.TryParse(data.RootElement.GetProperty("SpinupOffset").GetString(), out int SpinupOffset) ? SpinupOffset : 0;
+                _HTFanCtrl._settings.ECOSpinupOffsetMS = int.TryParse(data.RootElement.GetProperty("ECOSpinupOffset").GetString(), out int ECOSpinupOffset) ? ECOSpinupOffset : 0;
+                _HTFanCtrl._settings.LOWSpinupOffsetMS = int.TryParse(data.RootElement.GetProperty("LOWSpinupOffset").GetString(), out int LOWSpinupOffset) ? LOWSpinupOffset : 0;
+                _HTFanCtrl._settings.MEDSpinupOffsetMS = int.TryParse(data.RootElement.GetProperty("MEDSpinupOffset").GetString(), out int MEDSpinupOffset) ? MEDSpinupOffset : 0;
+                _HTFanCtrl._settings.HIGHSpinupOffsetMS = int.TryParse(data.RootElement.GetProperty("HIGHSpinupOffset").GetString(), out int HIGHSpinupOffset) ? HIGHSpinupOffset : 0;
                 _HTFanCtrl._settings.SpindownOffsetMS = int.TryParse(data.RootElement.GetProperty("SpindownOffset").GetString(), out int SpindownOffset) ? SpindownOffset : 0;
                 _HTFanCtrl._settings.MediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
                 _HTFanCtrl._settings.PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
@@ -499,9 +505,9 @@ namespace HTFanControl.Main
                 sb.AppendLine($"<b>Current Version:</b> {_version}");
                 sb.AppendLine("</br>");
 
-                HttpClient httpClient = new HttpClient();
+                using HttpClient httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("User-Agent", ".netapp");
-                string releaseJSON = httpClient.GetAsync("https://api.github.com/repos/nicko88/htfancontrol/releases/latest").Result.Content.ReadAsStringAsync().Result;
+                string releaseJSON = httpClient.GetStringAsync("https://api.github.com/repos/nicko88/htfancontrol/releases/latest").Result;
                 using JsonDocument data = JsonDocument.Parse(releaseJSON);
                 string latest = data.RootElement.GetProperty("tag_name").GetString();
                 string latesturl = data.RootElement.GetProperty("html_url").GetString();
@@ -635,7 +641,7 @@ namespace HTFanControl.Main
         {
             if(_waitForFile)
             {
-                Thread.Sleep(500);
+                Thread.Sleep(750);
                 _waitForFile = false;
             }
             string html = GetHtml("manage");

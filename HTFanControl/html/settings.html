@@ -59,8 +59,11 @@
 				MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
 				MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
 				GlobalOffset: document.getElementById('GlobalOffset').value,
-				SpinupOffset: document.getElementById('SpinupOffset').value,
 				SpindownOffset: document.getElementById('SpindownOffset').value,
+				ECOSpinupOffset: document.getElementById('ECOSpinupOffset').value,
+				LOWSpinupOffset: document.getElementById('LOWSpinupOffset').value,
+				MEDSpinupOffset: document.getElementById('MEDSpinupOffset').value,
+                HIGHSpinupOffset: document.getElementById('HIGHSpinupOffset').value,
 				MediaPlayer: document.querySelector('input[name="MediaPlayer"]:checked').value,
 				PlexToken: document.getElementById('PlexToken').value
 			};
@@ -234,9 +237,58 @@
 
 <h3>Settings</h3>
 <div class="ngroup">
+
 	<div class="nrow">
 		<div class="nitem" style="flex-grow: 1;">
-			<b>Fan Control Type</b>
+			<b style="font-size:larger">Media Player Type</b>
+			<br />
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Kodi" value="Kodi" onclick="kodi()" {Kodi}>
+				<label class="form-check-label" for="Kodi">Kodi</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="MPC" value="MPC" onclick="mpc()" {MPC}>
+				<label class="form-check-label" for="MPC">MPC-HC/BE</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Plex" value="Plex" onclick="plex()" {Plex}>
+				<label class="form-check-label" for="Plex">Plex</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Audio" value="Audio" onclick="audio()" {Audio}>
+				<label class="form-check-label" for="Audio">Audio Sync</label>
+			</div>
+		</div>
+	</div>
+
+	<div id="mediaPlayerDiv">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b id="lblPlayer">{lblPlayer}</b><input type="text" class="form-control" id="MediaPlayerIP" value="{MediaPlayerIP}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="number" class="form-control" id="MediaPlayerPort" value="{MediaPlayerPort}"></div>
+		</div>
+	</div>
+
+	<div id="plexDiv" style="display: none; padding-bottom: 5px;">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;">
+				<b>X-Plex-Token </b><a href="https://github.com/SpaceK33z/web-to-plex/wiki/Finding-an-authentication-token---X-Plex-Token" target="_blank">[?]</a>
+				<input type="text" class="form-control" id="PlexToken" value="{PlexToken}">
+			</div>
+		</div>
+		<b>Selected Plex Player:</b> {PlexPlayer}
+		<br />
+		<button onclick="SelectPlexPlayer()" class="btn btn-primary">Select Plex Player</button>
+	</div>
+
+	<div id="audioDiv" style="display: none; padding-bottom: 5px">
+		<b>Selected Audio Input Device:</b> {AudioDevice}
+		<br />
+		<button onclick="SelectAudioDevice()" class="btn btn-primary">Select Audio Device</button>
+	</div>
+
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 1;">
+			<b style="font-size:larger">Fan Control Type</b>
 			<br />
 			<div class="form-check form-check-inline">
 				<input class="form-check-input" type="radio" name="Controller" id="MQTT" value="MQTT" onclick="mqtt()" {MQTT}>
@@ -287,58 +339,18 @@
 		</div>
 	</div>
 
-	<div class="nrow">
-		<div class="nitem" style="flex-grow: 1;">
-			<b>Media Player Type</b>
-			<br />
-			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="radio" name="MediaPlayer" id="Kodi" value="Kodi" onclick="kodi()" {Kodi}>
-				<label class="form-check-label" for="Kodi">Kodi</label>
-			</div>
-			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="radio" name="MediaPlayer" id="MPC" value="MPC" onclick="mpc()" {MPC}>
-				<label class="form-check-label" for="MPC">MPC-HC/BE</label>
-			</div>
-			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="radio" name="MediaPlayer" id="Plex" value="Plex" onclick="plex()" {Plex}>
-				<label class="form-check-label" for="Plex">Plex</label>
-			</div>
-			<div class="form-check form-check-inline">
-				<input class="form-check-input" type="radio" name="MediaPlayer" id="Audio" value="Audio" onclick="audio()" {Audio}>
-				<label class="form-check-label" for="Audio">Audio Sync</label>
-			</div>
-		</div>
-	</div>
-
-	<div id="mediaPlayerDiv">
-		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b id="lblPlayer">{lblPlayer}</b><input type="text" class="form-control" id="MediaPlayerIP" value="{MediaPlayerIP}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="number" class="form-control" id="MediaPlayerPort" value="{MediaPlayerPort}"></div>
-		</div>
-	</div>
-
-	<div id="plexDiv" style="display: none; padding-bottom: 5px;">
-		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;">
-				<b>X-Plex-Token </b><a href="https://github.com/SpaceK33z/web-to-plex/wiki/Finding-an-authentication-token---X-Plex-Token" target="_blank">[?]</a>
-				<input type="text" class="form-control" id="PlexToken" value="{PlexToken}">
-			</div>
-		</div>
-		<b>Selected Plex Player:</b> {PlexPlayer}
-		<br />
-		<button onclick="SelectPlexPlayer()" class="btn btn-primary">Select Plex Player</button>
-	</div>
-
-	<div id="audioDiv" style="display: none; padding-bottom: 5px">
-		<b>Selected Audio Input Device:</b> {AudioDevice}
-		<br />
-		<button onclick="SelectAudioDevice()" class="btn btn-primary">Select Audio Device</button>
-	</div>
-
+	<b style="font-size:larger">Fan Offset Calibration</b>
 	<div class="nrow">
 		<div class="nitem" style="flex-grow: 1;"><b>Global Offset (ms)</b><input type="number" class="form-control" id="GlobalOffset" value="{GlobalOffset}"></div>
-		<div class="nitem" style="flex-grow: 1;"><b>SpinUp Offset (ms)</b><input type="number" class="form-control" id="SpinupOffset" value="{SpinupOffset}"></div>
-		<div class="nitem" style="flex-grow: 1;"><b>SpinDown Offset (ms)</b><input type="number" class="form-control" id="SpindownOffset" value="{SpindownOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>SpinDown (ms)</b><input type="number" class="form-control" id="SpindownOffset" value="{SpindownOffset}"></div>
+	</div>
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 1;"><b>ECO SpinUp (ms)</b><input type="number" class="form-control" id="ECOSpinupOffset" value="{ECOSpinupOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>LOW SpinUp (ms)</b><input type="number" class="form-control" id="LOWSpinupOffset" value="{LOWSpinupOffset}"></div>
+	</div>
+	<div class="nrow">
+		<div class="nitem" style="flex-grow: 1;"><b>MED SpinUp (ms)</b><input type="number" class="form-control" id="MEDSpinupOffset" value="{MEDSpinupOffset}"></div>
+		<div class="nitem" style="flex-grow: 1;"><b>HIGH SpinUp (ms)</b><input type="number" class="form-control" id="HIGHSpinupOffset" value="{HIGHSpinupOffset}"></div>
 	</div>
 
 </div>

@@ -34,9 +34,10 @@ namespace FanTrayIcon
             ShowWindow(handle, SW_HIDE);
 
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "HTFanControl";
+            trayIcon.Text = "HTFanControl (Right Click For Menu)";
             trayIcon.Icon = new Icon(GetType(), "htfancontrol.ico");
-            trayIcon.Click += new EventHandler(trayIcon_Click);
+            trayIcon.MouseClick += new MouseEventHandler(trayIcon_MouseClick);
+            trayIcon.DoubleClick += new EventHandler(trayIcon_DoubleClick);
 
             ToolStripMenuItem itemWebUI = new ToolStripMenuItem();
             itemWebUI.Text = "Open Web UI";
@@ -76,12 +77,22 @@ namespace FanTrayIcon
             Application.Run();
         }
 
-        private void trayIcon_Click(object sender, EventArgs e)
+        private void trayIcon_MouseClick(object sender, MouseEventArgs e)
         {
             Point position = Cursor.Position;
             position.X -= 253;
+            position.Y -= 100;
 
-            trayIcon.ContextMenuStrip.Show(position);
+            if (e.Button == MouseButtons.Right)
+            {
+                trayIcon.ContextMenuStrip.Show(position);
+            }
+        }
+
+        private void trayIcon_DoubleClick(object sender, EventArgs e)
+        {
+            trayIcon.ContextMenuStrip.Hide();
+            itemWebUI_Click(sender, e);
         }
 
         private void itemWebUI_Click(object sender, EventArgs e)

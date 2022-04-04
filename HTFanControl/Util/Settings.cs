@@ -38,7 +38,10 @@ namespace HTFanControl.Util
         public string PlexClientPort { get; set; }
         public string PlexClientGUID { get; set; }
         public int GlobalOffsetMS { get; set; }
-        public int SpinupOffsetMS { get; set; }
+        public int ECOSpinupOffsetMS { get; set; }
+        public int LOWSpinupOffsetMS { get; set; }
+        public int MEDSpinupOffsetMS { get; set; }
+        public int HIGHSpinupOffsetMS { get; set; }
         public int SpindownOffsetMS { get; set; }
 
         public static Settings LoadSettings()
@@ -72,7 +75,10 @@ namespace HTFanControl.Util
                 settings.MQTT_HIGH_Topic = "cmnd/HTFan/EVENT";
                 settings.MQTT_HIGH_Payload = "s4";
                 settings.GlobalOffsetMS = 2000;
-                settings.SpinupOffsetMS = 750;
+                settings.ECOSpinupOffsetMS = 1400;
+                settings.LOWSpinupOffsetMS = 1200;
+                settings.MEDSpinupOffsetMS = 1000;
+                settings.HIGHSpinupOffsetMS = 800;
                 settings.SpindownOffsetMS = 250;
             }
 

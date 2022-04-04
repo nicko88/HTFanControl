@@ -286,12 +286,22 @@ namespace HTFanControl.Main
         {
             string validFilePath = null;
 
-            //look for windtrack .txt in tmp folder
+            //LEGACY look in windtrack folder for .txt
             try
             {
-                if (File.Exists(Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt")))
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".txt")))
                 {
-                    validFilePath = Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt");
+                    validFilePath = Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".txt");
+                }
+            }
+            catch { }
+
+            //LEGACY check the active video's folder for .txt
+            try
+            {
+                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(filePath, fileName + ".txt")))
+                {
+                    validFilePath = Path.Combine(filePath, fileName + ".txt");
                 }
             }
             catch { }
@@ -314,26 +324,6 @@ namespace HTFanControl.Main
                 {
                     ExtractWindtrack(Path.Combine(filePath, fileName + ".zip"), false);
                     validFilePath = Path.Combine(ConfigHelper._rootPath, "tmp", fileName + ".txt");
-                }
-            }
-            catch { }
-
-            //LEGACY look in windtrack folder
-            try
-            {
-                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".txt")))
-                {
-                    validFilePath = Path.Combine(ConfigHelper._rootPath, "windtracks", fileName + ".txt");
-                }
-            }
-            catch { }
-
-            //check the active video's folder
-            try
-            {
-                if (string.IsNullOrEmpty(validFilePath) && File.Exists(Path.Combine(filePath, fileName + ".txt")))
-                {
-                    validFilePath = Path.Combine(filePath, fileName + ".txt");
                 }
             }
             catch { }
@@ -451,7 +441,22 @@ namespace HTFanControl.Main
                                 //if command comes after OFF, add spinup offset
                                 if (lastCmd.Contains("OFF"))
                                 {
-                                    timeCode -= _settings.SpinupOffsetMS;
+                                    if(lineData[1].Contains("ECO"))
+                                    {
+                                        timeCode -= _settings.ECOSpinupOffsetMS;
+                                    }
+                                    else if (lineData[1].Contains("LOW"))
+                                    {
+                                        timeCode -= _settings.LOWSpinupOffsetMS;
+                                    }
+                                    else if (lineData[1].Contains("MED"))
+                                    {
+                                        timeCode -= _settings.MEDSpinupOffsetMS;
+                                    }
+                                    else if (lineData[1].Contains("HIGH"))
+                                    {
+                                        timeCode -= _settings.HIGHSpinupOffsetMS;
+                                    }
                                 }
                                 //if command is OFF, add spindown offset
                                 else if (lineData[1].Contains("OFF"))
@@ -506,11 +511,20 @@ namespace HTFanControl.Main
 
         private void ExtractWindtrack(string filePath, bool extractFingerprint)
         {
-            DirectoryInfo tmp = new DirectoryInfo(Path.Combine(ConfigHelper._rootPath, "tmp"));
-            foreach (FileInfo file in tmp.GetFiles())
+            try
             {
-                file.Delete();
+                DirectoryInfo directoryInfo = new DirectoryInfo(Path.Combine(ConfigHelper._rootPath, "tmp"));
+
+                foreach (FileInfo file in directoryInfo.GetFiles())
+                {
+                    file.Delete();
+                }
+                foreach (DirectoryInfo dir in directoryInfo.GetDirectories())
+                {
+                    dir.Delete(true);
+                }
             }
+            catch { }
 
             string fileName = Path.GetFileNameWithoutExtension(filePath);
 
