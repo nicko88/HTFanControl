@@ -1,3 +1,4 @@
+## [Download latest release](https://github.com/nicko88/HTFanControl/releases/latest)
 
 # HTFanControl
 #### 4D Theater Wind Effect - DIY Home Theater Project

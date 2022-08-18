@@ -23,11 +23,15 @@ namespace HTFanControl.Main
         private readonly string _version = Assembly.GetExecutingAssembly().GetName().Version.ToString().TrimEnd(new char[] { '.', '0' });
         private readonly Thread _httpThread;
         private readonly HTFanControl _HTFanCtrl;
+        private string _port;
+        private string _instanceName;
         private bool _webUIEnabled = true;
         private bool _waitForFile = false;
 
-        public WebUI()
+        public WebUI(string port, string instanceName)
         {
+            _port = port;
+            _instanceName = instanceName;
             _httpThread = new Thread(StartListen);
             _httpThread.Start();
 
@@ -37,7 +41,7 @@ namespace HTFanControl.Main
         private void StartListen()
         {
             HttpListener listener = new HttpListener();
-            listener.Prefixes.Add("http://*:5500/");
+            listener.Prefixes.Add($"http://*:{_port}/");
             listener.Start();
 
             while (_webUIEnabled)
@@ -209,6 +213,7 @@ namespace HTFanControl.Main
         private string StatusPage()
         {
             string html = GetHtml("status");
+            html = html.Replace("HTFanControl", _instanceName);
 
             if (_HTFanCtrl._isEnabled)
             {
@@ -344,16 +349,16 @@ namespace HTFanControl.Main
 
             string html = GetHtml("settings");
 
-            if (ConfigHelper.GetOS() == "win")
-            {
+            //if (ConfigHelper.GetOS() == "win")
+            //{
                 html = html.Replace("/*{showlinux}*/", "display: none;");
                 html = html.Replace("/*{hidelinux}*/", "display: initial;");
-            }
-            else
-            {
-                html = html.Replace("/*{showlinux}*/", "display: initial;");
-                html = html.Replace("/*{hidelinux}*/", "display: none;");
-            }
+            //}
+            //else
+            //{
+            //    html = html.Replace("/*{showlinux}*/", "display: initial;");
+            //    html = html.Replace("/*{hidelinux}*/", "display: none;");
+            //}
 
             if (_HTFanCtrl._settings.ControllerType == "LIRC")
             {
@@ -367,6 +372,7 @@ namespace HTFanControl.Main
             html = html.Replace("{LircIP}", _HTFanCtrl._settings.LIRC_IP);
             html = html.Replace("{LircPort}", _HTFanCtrl._settings.LIRC_Port.ToString());
             html = html.Replace("{LircRemote}", _HTFanCtrl._settings.LIRC_Remote);
+            html = html.Replace("{LircONdelay}", _HTFanCtrl._settings.LIRC_ON_Delay.ToString());
 
             html = html.Replace("{MqttIP}", _HTFanCtrl._settings.MQTT_IP);
             html = html.Replace("{MqttPort}", _HTFanCtrl._settings.MQTT_Port.ToString());
@@ -384,6 +390,9 @@ namespace HTFanControl.Main
             html = html.Replace("{MqttMEDpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_MED_Payload));
             html = html.Replace("{MqttHIGHtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_HIGH_Topic));
             html = html.Replace("{MqttHIGHpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_HIGH_Payload));
+            html = html.Replace("{MqttONtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Topic));
+            html = html.Replace("{MqttONpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Payload));
+            html = html.Replace("{MqttONdelay}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Delay));
 
             if (_HTFanCtrl._settings.MediaPlayerType == "MPC")
             {
@@ -462,8 +471,9 @@ namespace HTFanControl.Main
 
                 _HTFanCtrl._settings.ControllerType = data.RootElement.GetProperty("Controller").GetString();
                 _HTFanCtrl._settings.LIRC_IP = data.RootElement.GetProperty("LircIP").GetString();
-                _HTFanCtrl._settings.LIRC_Port = int.TryParse(data.RootElement.GetProperty("LircPort").GetString(), out int lircPort) ? lircPort : 8765;
+                _HTFanCtrl._settings.LIRC_Port = int.TryParse(data.RootElement.GetProperty("LircPort").GetString(), out int LircPort) ? LircPort : 8765;
                 _HTFanCtrl._settings.LIRC_Remote = data.RootElement.GetProperty("LircRemote").GetString();
+                _HTFanCtrl._settings.LIRC_ON_Delay = int.TryParse(data.RootElement.GetProperty("LircONdelay").GetString(), out int LircONdelay) ? LircONdelay : 0;
                 _HTFanCtrl._settings.MQTT_IP = data.RootElement.GetProperty("MqttIP").GetString();
                 _HTFanCtrl._settings.MQTT_Port = int.TryParse(data.RootElement.GetProperty("MqttPort").GetString(), out int MqttPort) ? MqttPort : 1883;
                 _HTFanCtrl._settings.MQTT_User = data.RootElement.GetProperty("MqttUser").GetString();
@@ -478,6 +488,9 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MQTT_MED_Payload = data.RootElement.GetProperty("MqttMEDpayload").GetString();
                 _HTFanCtrl._settings.MQTT_HIGH_Topic = data.RootElement.GetProperty("MqttHIGHtopic").GetString();
                 _HTFanCtrl._settings.MQTT_HIGH_Payload = data.RootElement.GetProperty("MqttHIGHpayload").GetString();
+                _HTFanCtrl._settings.MQTT_ON_Topic = data.RootElement.GetProperty("MqttONtopic").GetString();
+                _HTFanCtrl._settings.MQTT_ON_Payload = data.RootElement.GetProperty("MqttONpayload").GetString();
+                _HTFanCtrl._settings.MQTT_ON_Delay = int.TryParse(data.RootElement.GetProperty("MqttONdelay").GetString(), out int MqttONdelay) ? MqttONdelay: 0;
                 _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._settings.MediaPlayerPort = int.TryParse(data.RootElement.GetProperty("MediaPlayerPort").GetString(), out int MediaPlayerPort) ? MediaPlayerPort : 0;
                 _HTFanCtrl._settings.GlobalOffsetMS = int.TryParse(data.RootElement.GetProperty("GlobalOffset").GetString(), out int GlobalOffset) ? GlobalOffset : 0;

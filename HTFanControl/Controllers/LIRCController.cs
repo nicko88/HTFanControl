@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,94 +10,57 @@ namespace HTFanControl.Controllers
     class LIRCController : IController
     {
         private Socket _lircSocket;
-        private Dictionary<string, string> _lircMapping;
-
         private Settings _settings;
+
+        private bool _isOFF = true;
+        private bool _ONcmd = false;
 
         public string ErrorStatus { get; private set; }
 
         public LIRCController(Settings settings)
         {
             _settings = settings;
-
-            LoadLIRCMapping();
-        }
-
-        public bool Connect()
-        {
-            Disconnect();
-
-            try
-            {
-                IPAddress ipAddress = IPAddress.Parse(_settings.LIRC_IP);
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, _settings.LIRC_Port);
-                _lircSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                IAsyncResult result = _lircSocket.BeginConnect(remoteEP, null, null);
-                result.AsyncWaitHandle.WaitOne(3000);
-
-                if (!_lircSocket.Connected)
-                {
-                    throw new Exception();
-                }
-
-                _lircSocket.EndConnect(result);
-
-                Thread.Sleep(25);
-            }
-            catch
-            {
-                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to LIRC at: {_settings.LIRC_IP}:{_settings.LIRC_Port}";
-                return false;
-            }
-
-            Thread.Sleep(25);
-
-            return true;
-        }
-
-        public void Disconnect()
-        {
-            if (_lircSocket != null)
-            {
-                try
-                {
-                    _lircSocket.Shutdown(SocketShutdown.Both);
-                    _lircSocket.Close();
-                }
-                catch { }
-            }
+            _ONcmd = _settings.LIRC_ON_Delay > 0;
         }
 
         public bool SendCMD(string cmd)
         {
-            if (cmd == "STOP")
+            bool send = true;
+            bool goodResult = true;
+
+            //case when fan needs to be turned ON before a command can be sent
+            if (_ONcmd && _isOFF)
             {
-                if (_lircMapping != null && _lircMapping.TryGetValue("STOP", out string stopCMD))
+                if (cmd != "OFF")
                 {
-                    cmd = stopCMD;
+                    string lircOnCMD = $"SEND_ONCE {_settings.LIRC_Remote} ON\n";
+                    SendLIRCBytes(Encoding.ASCII.GetBytes(lircOnCMD));
+
+                    Thread.Sleep(_settings.MQTT_ON_Delay);
                 }
+                //fan is already OFF, but it's being asked to turn OFF, so don't send a command, because that would cause it to turn ON again if ON/OFF are the same IR command
                 else
                 {
-                    cmd = "OFF";
+                    send = false;
                 }
             }
 
-            string[] cmds = cmd.Split(',');
-            bool goodResult = true;
-
-            foreach (string c in cmds)
+            if (send)
             {
-                if (_lircMapping != null && _lircMapping.TryGetValue(c, out string remote))
-                {
-                    _settings.LIRC_Remote = remote;
-                }
-
-                string lircCMD = $"SEND_ONCE {_settings.LIRC_Remote} {c}\n";
+                string lircCMD = $"SEND_ONCE {_settings.LIRC_Remote} {cmd}\n";
                 goodResult = SendLIRCBytes(Encoding.ASCII.GetBytes(lircCMD));
             }
 
-            if(!goodResult)
+            if (cmd == "OFF")
+            {
+                _isOFF = true;
+            }
+            else
+            {
+                _isOFF = false;
+            }
+
+            if (!goodResult)
             {
                 return false;
             }
@@ -150,23 +111,49 @@ namespace HTFanControl.Controllers
             return true;
         }
 
-        private void LoadLIRCMapping()
+        public bool Connect()
         {
-            _lircMapping = null;
-            if (File.Exists(Path.Combine(ConfigHelper._rootPath, "lircmapping.txt")))
-            {
-                _lircMapping = new Dictionary<string, string>();
-                string[] mappingFile = File.ReadAllLines(Path.Combine(ConfigHelper._rootPath, "lircmapping.txt"));
+            Disconnect();
 
-                foreach (string s in mappingFile)
+            try
+            {
+                IPAddress ipAddress = IPAddress.Parse(_settings.LIRC_IP);
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, _settings.LIRC_Port);
+                _lircSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+                IAsyncResult result = _lircSocket.BeginConnect(remoteEP, null, null);
+                result.AsyncWaitHandle.WaitOne(3000);
+
+                if (!_lircSocket.Connected)
                 {
-                    try
-                    {
-                        string[] vals = s.Split('=');
-                        _lircMapping.Add(vals[1], vals[0]);
-                    }
-                    catch { }
+                    throw new Exception();
                 }
+
+                _lircSocket.EndConnect(result);
+
+                Thread.Sleep(25);
+            }
+            catch
+            {
+                ErrorStatus = $"({DateTime.Now:h:mm:ss tt}) Cannot connect to LIRC at: {_settings.LIRC_IP}:{_settings.LIRC_Port}";
+                return false;
+            }
+
+            Thread.Sleep(25);
+
+            return true;
+        }
+
+        public void Disconnect()
+        {
+            if (_lircSocket != null)
+            {
+                try
+                {
+                    _lircSocket.Shutdown(SocketShutdown.Both);
+                    _lircSocket.Close();
+                }
+                catch { }
             }
         }
     }

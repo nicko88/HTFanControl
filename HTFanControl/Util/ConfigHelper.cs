@@ -43,23 +43,23 @@ namespace HTFanControl.Util
             return OS;
         }
 
-        public static void SetupWin()
+        public static void SetupWin(string port, string instanceName)
         {
             string adminCMD = null;
-            string firewall = RunCmd("netsh", "advfirewall firewall show rule name=HTFanControl", false);
-            if (!firewall.Contains("HTFanControl"))
+            string firewall = RunCmd("netsh", $"advfirewall firewall show rule name={instanceName}", false);
+            if (!firewall.Contains(instanceName))
             {
-                adminCMD = "netsh advfirewall firewall add rule name=\"HTFanControl\" protocol=TCP dir=in localport=5500 action=allow";
+                adminCMD = $"netsh advfirewall firewall add rule name=\"{instanceName}\" protocol=TCP dir=in localport={port} action=allow";
             }
 
-            string urlacl = RunCmd("netsh", "http show urlacl url=http://*:5500/", false);
-            if (!urlacl.Contains("http://*:5500/"))
+            string urlacl = RunCmd("netsh", $"http show urlacl url=http://*:{port}/", false);
+            if (!urlacl.Contains($"http://*:{port}/"))
             {
                 if (adminCMD != null)
                 {
                     adminCMD += " && ";
                 }
-                adminCMD += "netsh http add urlacl url=http://*:5500/ user=" + Environment.UserName;
+                adminCMD += $"netsh http add urlacl url=http://*:{port}/ user=" + Environment.UserName;
             }
 
             if (adminCMD != null)

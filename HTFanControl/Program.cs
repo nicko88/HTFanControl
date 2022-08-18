@@ -9,9 +9,26 @@ namespace HTFanControl
 {
     class Program
     {
+        private static string port = "5500";
+        private static string instanceName = "HTFanControl";
+
         static void Main(string[] args)
         {
-            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1)
+            try
+            {
+                if (!string.IsNullOrEmpty(args[0]))
+                {
+                    port = args[0];
+                }
+                if (!string.IsNullOrEmpty(args[1]))
+                {
+                    instanceName = args[1];
+                }
+            }
+            catch { }
+
+
+            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location)).Length > 1 && port == "5500")
             {
                 Process.GetCurrentProcess().Kill();
             }
@@ -30,9 +47,9 @@ namespace HTFanControl
 
             if (ConfigHelper.GetOS() == "win")
             {
-                ConfigHelper.SetupWin();
+                ConfigHelper.SetupWin(port, instanceName);
 #if (RELEASE || DEBUG) 
-                Task.Factory.StartNew(() => new FanTrayIcon.TrayIcon(ConfigHelper.GetIP()));
+                Task.Factory.StartNew(() => new FanTrayIcon.TrayIcon(ConfigHelper.GetIP(), port, instanceName));
 #endif
             }
             else
@@ -40,9 +57,9 @@ namespace HTFanControl
                 ConfigHelper.SetupLinux();
             }
 
-            Console.WriteLine("http://" + ConfigHelper.GetIP() + ":5500");
+            Console.WriteLine($"http://{ConfigHelper.GetIP()}:{port}");
 
-            _ = new Main.WebUI();
+            _ = new Main.WebUI(port, instanceName);
         }
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

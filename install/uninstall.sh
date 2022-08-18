@@ -11,7 +11,7 @@ then
 	rm -rf /opt/HTFanControl
 fi
 
-read -p "Do you also want to UNINSTALL mosquitto MQTT broker? [y/n]" -n 1 -r
+read -p "Do you want to UNINSTALL mosquitto MQTT broker? [y/n]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then

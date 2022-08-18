@@ -12,6 +12,8 @@ namespace FanTrayIcon
     public class TrayIcon
     {
         string _IP;
+        string _port;
+        string _instanceName;
 
         private NotifyIcon trayIcon;
         private ToolStripMenuItem itemConsole;
@@ -26,15 +28,17 @@ namespace FanTrayIcon
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
 
-        public TrayIcon(string IP)
+        public TrayIcon(string IP, string port, string instanceName)
         {
             _IP = IP;
+            _port = port;
+            _instanceName = instanceName;
 
             IntPtr handle = GetConsoleWindow();
             ShowWindow(handle, SW_HIDE);
 
             trayIcon = new NotifyIcon();
-            trayIcon.Text = "HTFanControl (Right Click For Menu)";
+            trayIcon.Text = $"{_instanceName} (Right Click For Menu)";
             trayIcon.Icon = new Icon(GetType(), "htfancontrol.ico");
             trayIcon.MouseClick += new MouseEventHandler(trayIcon_MouseClick);
             trayIcon.DoubleClick += new EventHandler(trayIcon_DoubleClick);
@@ -49,11 +53,11 @@ namespace FanTrayIcon
             itemConsole.Click += new EventHandler(itemConsole_Click);
 
             itemAutostart = new ToolStripMenuItem();
-            itemAutostart.Text = "Start HTFanControl Automatically";
+            itemAutostart.Text = $"Start {_instanceName} Automatically";
             itemAutostart.CheckOnClick = true;
             itemAutostart.CheckedChanged += new EventHandler(itemAutostart_CheckedChanged);
 
-            if (CheckRegKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "HTFanControl"))
+            if (CheckRegKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", _instanceName))
             {
                 itemAutostart.Checked = true;
             }
@@ -61,7 +65,7 @@ namespace FanTrayIcon
             ToolStripSeparator sep1 = new ToolStripSeparator();
 
             ToolStripMenuItem itemClose = new ToolStripMenuItem();
-            itemClose.Text = "Shutdown HTFanControl";
+            itemClose.Text = $"Shutdown {_instanceName}";
             itemClose.Click += new EventHandler(itemClose_Click);
 
             ContextMenuStrip trayMenu = new ContextMenuStrip();
@@ -97,7 +101,7 @@ namespace FanTrayIcon
 
         private void itemWebUI_Click(object sender, EventArgs e)
         {
-            string url = $"http://{_IP}:5500";
+            string url = $"http://{_IP}:{_port}";
 
             try
             {
@@ -136,12 +140,19 @@ namespace FanTrayIcon
             if (itemAutostart.Checked)
             {
                 RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                key.SetValue("HTFanControl", Process.GetCurrentProcess().MainModule.FileName);
+                if (_port == "5500")
+                {
+                    key.SetValue("HTFanControl", Process.GetCurrentProcess().MainModule.FileName);
+                }
+                else
+                {
+                    key.SetValue(_instanceName, $@"{Process.GetCurrentProcess().MainModule.FileName} ""{_port}"" ""{_instanceName}""");
+                }
             }
             else
             {
                 RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                key.DeleteValue("HTFanControl", false);
+                key.DeleteValue(_instanceName, false);
             }
         }
 

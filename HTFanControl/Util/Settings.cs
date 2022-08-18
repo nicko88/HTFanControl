@@ -14,6 +14,7 @@ namespace HTFanControl.Util
         public string LIRC_IP { get; set; }
         public int LIRC_Port { get; set; }
         public string LIRC_Remote { get; set; }
+        public int LIRC_ON_Delay { get; set; }
         public string MQTT_IP { get; set; }
         public int MQTT_Port { get; set; }
         public string MQTT_User { get; set; }

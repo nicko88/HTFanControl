@@ -248,14 +248,7 @@ namespace HTFanControl.Main
 
             if(i == -1)
             {
-                if(_fanController is LIRCController)
-                {
-                    fanCmd = "STOP";
-                }
-                else
-                {
-                    fanCmd = "OFF";
-                }
+                fanCmd = "OFF";
             }
             else
             {
@@ -279,6 +272,7 @@ namespace HTFanControl.Main
                 }
             }
 
+            //global minimum command gap
             Thread.Sleep(250);
         }
 
@@ -354,7 +348,6 @@ namespace HTFanControl.Main
                 string lastCmd = "OFF";
                 double rawPrevTime = -500;
                 double actualPrevTime = -500;
-                bool verifyOrder = true;
 
                 for (int i = 0; i < lines.Length; i++)
                 {
@@ -381,30 +374,27 @@ namespace HTFanControl.Main
                         {
                             _offsetEnabled = true;
                         }
-                        if (line.ToLower().Contains("ignoreorder"))
-                        {
-                            verifyOrder = false;
-                        }
                     }
                     //non-comment or blank lines
                     else if (!line.StartsWith(@"\\") && !line.StartsWith(@"//") && line.Length > 0)
                     {
+                        //parse line
                         string[] lineData = line.Split(',');
+                        string lineTime = lineData[0];
+                        string lineCmd = lineData[1];
 
-                        // check if this timecode contains a fan command so we can apply offsets
+                        //check if this timecode contains a fan command so we can apply offsets
                         bool isFanCmd = false;
-                        for (int j = 1; j < lineData.Length; j++)
+
+                        if (lineCmd == "OFF" || lineCmd == "ECO" || lineCmd == "LOW" || lineCmd == "MED" || lineCmd == "HIGH")
                         {
-                            if (lineData[j].Equals("OFF") || lineData[j].Equals("ECO") || lineData[j].Equals("LOW") || lineData[j].Equals("MED") || lineData[j].Equals("HIGH"))
-                            {
-                                isFanCmd = true;
-                            }
+                            isFanCmd = true;
                         }
 
                         double? timeCode = null;
                         try
                         {
-                            timeCode = TimeSpan.Parse(lineData[0]).TotalMilliseconds;
+                            timeCode = TimeSpan.Parse(lineTime).TotalMilliseconds;
                         }
                         catch
                         {
@@ -416,19 +406,6 @@ namespace HTFanControl.Main
 
                         if(timeCode != null)
                         {
-                            //detect out of order line and error
-                            if (verifyOrder)
-                            {
-                                if (timeCode < rawPrevTime)
-                                {
-                                    if (_windtrackError is null)
-                                    {
-                                        _windtrackError = $"Timecode on line {i + 1} is out of order";
-                                    }
-                                    break;
-                                }
-                            }
-
                             if (isFanCmd)
                             {
                                 timeCode = timeCode - _settings.GlobalOffsetMS;
@@ -439,27 +416,27 @@ namespace HTFanControl.Main
                             if (isFanCmd)
                             {
                                 //if command comes after OFF, add spinup offset
-                                if (lastCmd.Contains("OFF"))
+                                if (lastCmd == "OFF")
                                 {
-                                    if(lineData[1].Contains("ECO"))
+                                    if(lineCmd == "ECO")
                                     {
                                         timeCode -= _settings.ECOSpinupOffsetMS;
                                     }
-                                    else if (lineData[1].Contains("LOW"))
+                                    else if (lineCmd == "LOW")
                                     {
                                         timeCode -= _settings.LOWSpinupOffsetMS;
                                     }
-                                    else if (lineData[1].Contains("MED"))
+                                    else if (lineCmd == "MED")
                                     {
                                         timeCode -= _settings.MEDSpinupOffsetMS;
                                     }
-                                    else if (lineData[1].Contains("HIGH"))
+                                    else if (lineCmd == "HIGH")
                                     {
                                         timeCode -= _settings.HIGHSpinupOffsetMS;
                                     }
                                 }
                                 //if command is OFF, add spindown offset
-                                else if (lineData[1].Contains("OFF"))
+                                else if (lineCmd == "OFF")
                                 {
                                     timeCode -= _settings.SpindownOffsetMS;
                                 }
@@ -483,17 +460,11 @@ namespace HTFanControl.Main
                                 timeCode = 0;
                             }
 
-                            string cmds = "";
-                            for (int j = 1; j < lineData.Length; j++)
-                            {
-                                cmds += lineData[j] + ",";
-                            }
-
-                            _videoTimeCodes.Add(new Tuple<TimeSpan, string>(TimeSpan.FromMilliseconds((double)timeCode + _offset), cmds.Trim(',')));
+                            _videoTimeCodes.Add(new Tuple<TimeSpan, string>(TimeSpan.FromMilliseconds((double)timeCode + _offset), lineData[1]));
 
                             if (isFanCmd)
                             {
-                                lastCmd = lineData[1];
+                                lastCmd = lineCmd;
                                 actualPrevTime = (double)timeCode;
                             }
                         }

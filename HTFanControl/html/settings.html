@@ -42,6 +42,7 @@
 				LircIP: document.getElementById('LircIP').value,
 				LircPort: document.getElementById('LircPort').value,
 				LircRemote: document.getElementById('LircRemote').value,
+                LircONdelay: document.getElementById('LircONdelay').value,
 				MqttIP: document.getElementById('MqttIP').value,
 				MqttPort: document.getElementById('MqttPort').value,
                 MqttUser: document.getElementById('MqttUser').value,
@@ -55,7 +56,10 @@
                 MqttMEDtopic: document.getElementById('MqttMEDtopic').value,
 				MqttMEDpayload: document.getElementById('MqttMEDpayload').value,
                 MqttHIGHtopic: document.getElementById('MqttHIGHtopic').value,
-                MqttHIGHpayload: document.getElementById('MqttHIGHpayload').value,
+				MqttHIGHpayload: document.getElementById('MqttHIGHpayload').value,
+                MqttONtopic: document.getElementById('MqttONtopic').value,
+				MqttONpayload: document.getElementById('MqttONpayload').value,
+                MqttONdelay: document.getElementById('MqttONdelay').value,
 				MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
 				MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
 				GlobalOffset: document.getElementById('GlobalOffset').value,
@@ -304,7 +308,10 @@
 		<div class="nrow">
 			<div class="nitem" style="flex-grow: 1;"><b>LIRC IP</b><input type="text" class="form-control" id="LircIP" value="{LircIP}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>Port</b><input type="number" class="form-control" id="LircPort" value="{LircPort}"></div>
+		</div>
+		<div class="nrow">
 			<div class="nitem" style="flex-grow: 1;"><b>Remote Name</b><input type="text" class="form-control" id="LircRemote" value="{LircRemote}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>ON Delay (ms)</b><input type="number" class="form-control" id="LircONdelay" value="{LircONdelay}"></div>
 		</div>
 	</div>
 
@@ -336,6 +343,15 @@
 		<div class="nrow">
 			<div class="nitem" style="flex-grow: 2;"><b>HIGH Topic</b><input type="text" class="form-control" id="MqttHIGHtopic" value="{MqttHIGHtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>HIGH Payload</b><input type="text" class="form-control" id="MqttHIGHpayload" value="{MqttHIGHpayload}"></div>
+		</div>
+		<div class="nrow">
+			<b style="font-size:larger">For IR Control Over MQTT Only</b>
+			<br />
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>ON Topic</b><input type="text" class="form-control" id="MqttONtopic" value="{MqttONtopic}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>ON Payload</b><input type="text" class="form-control" id="MqttONpayload" value="{MqttONpayload}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>ON Delay</b><input type="number" class="form-control" id="MqttONdelay" value="{MqttONdelay}"></div>
 		</div>
 	</div>
 

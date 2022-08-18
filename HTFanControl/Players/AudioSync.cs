@@ -128,7 +128,7 @@ namespace HTFanControl.Main
                 ResultEntry resultEntry = aVQueryResult.ResultEntries.First().Audio;
 
                 _timeJump = false;
-                TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength + 0.12 /*+ TimeSpan.FromMilliseconds(aVQueryResult.QueryCommandStats.Audio.TotalDurationMilliseconds).TotalSeconds*/);
+                TimeSpan matchTime = TimeSpan.FromSeconds(resultEntry.TrackMatchStartsAt + resultEntry.QueryLength + 0.2 /*+ TimeSpan.FromMilliseconds(aVQueryResult.QueryCommandStats.Audio.TotalDurationMilliseconds).TotalSeconds*/);
 
                 if (matchTime > _lastMatchTime.Add(TimeSpan.FromMinutes(5)) || matchTime < _lastMatchTime.Subtract(TimeSpan.FromMinutes(5)))
                 {
