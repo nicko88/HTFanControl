@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Web;
@@ -10,8 +11,8 @@ namespace HTFanControl.Players
     class KodiPlayer : IPlayer
     {
         private HttpClient _httpClient;
-
         private Settings _settings;
+        private string _playerID = null;
 
         public bool IsPlaying { get; private set; }
         public long VideoTime { get; private set; }
@@ -34,7 +35,16 @@ namespace HTFanControl.Players
         {
             try
             {
-                StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }", System.Text.Encoding.UTF8, "application/json");
+                if(_playerID is null)
+                {
+                    StringContent playerIDJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetActivePlayers"", ""id"": 1}", System.Text.Encoding.UTF8, "application/json");
+                    string playerIDJSONResponse = _httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/jsonrpc", playerIDJSONRequest).Result.Content.ReadAsStringAsync().Result;
+
+                    using JsonDocument playerIdJSON = JsonDocument.Parse(playerIDJSONResponse);
+                    _playerID = playerIdJSON.RootElement.GetProperty("result")[0].GetProperty("playerid").GetRawText();
+                }
+
+                StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": " + "1" + "}", System.Text.Encoding.UTF8, "application/json");
                 string filenameJSONResponse = _httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/jsonrpc", filenameJSONRequest).Result.Content.ReadAsStringAsync().Result;
 
                 using JsonDocument fileInfoJSON = JsonDocument.Parse(filenameJSONResponse);
@@ -43,6 +53,25 @@ namespace HTFanControl.Players
                 (string, string) fileInfo = ParseKodiFile(filePath);
                 FileName = fileInfo.Item1;
                 FilePath = fileInfo.Item2;
+
+                //for PlexKodiConnect plugin
+                if (FileName.Contains("plex_id"))
+                {
+                    FileName = FileName.Substring(FileName.LastIndexOf("&filename=") + 10);
+                }
+
+                //for Plex for Kodi plugin
+                if(filePath.Contains("plex.direct"))
+                {
+                    if(filePath.Contains("/transcode/"))
+                    {
+                        FileName = "Video being transcoded by Plex, only Direct Play (Original quality) supported";
+                    }
+                    else
+                    {
+                        FileName = new string(fileInfoJSON.RootElement.GetProperty("result").GetProperty("item").GetProperty("label").GetString().Where(ch => !Path.GetInvalidFileNameChars().Contains(ch)).ToArray());
+                    }
+                }
 
                 bool getKodiTime = true;
 
@@ -73,7 +102,7 @@ namespace HTFanControl.Players
 
                 if (getKodiTime)
                 {
-                    StringContent timeJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetProperties"", ""params"": {""properties"": [""time"", ""speed""], ""playerid"": 1}, ""id"": 1}", System.Text.Encoding.UTF8, "application/json");
+                    StringContent timeJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetProperties"", ""params"": {""properties"": [""time"", ""speed""], ""playerid"": 1}, ""id"": " + _playerID + "}", System.Text.Encoding.UTF8, "application/json");
                     string timeJSONResponse = _httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/jsonrpc", timeJSONRequest).Result.Content.ReadAsStringAsync().Result;
 
                     using JsonDocument time = JsonDocument.Parse(timeJSONResponse);

@@ -315,7 +315,7 @@ namespace HTFanControl.Main
                 {
                     if (!string.IsNullOrEmpty(_HTFanCtrl._loadedVideoFilename) && _HTFanCtrl._loadedVideoFilename != "Loading Video Fingerprints...")
                     {
-                        htmlData.AppendLine("No wind track file found named: " + _HTFanCtrl._loadedVideoFilename + ".txt");
+                        htmlData.AppendLine("No wind track file found named: " + _HTFanCtrl._loadedVideoFilename + ".zip/.txt");
                         htmlData.AppendLine("<br /><br />");
                     }
                     htmlData.AppendLine("<b>Current Command:</b>");

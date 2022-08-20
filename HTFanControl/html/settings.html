@@ -126,6 +126,11 @@
 			document.getElementById('mediaPlayerDiv').style.display = 'block';
 			document.getElementById('plexDiv').style.display = 'block';
 			document.getElementById('audioDiv').style.display = 'none';
+
+            var msg = "Direct Plex connection is not recommended as it doesn't provide accurate time sync."
+			msg += "\r\n\r\n";
+			msg += "Please use Plex plugin for Kodi or Audio (microphone) sync methods instead.";
+            alert(msg);
 		}
 		function audio()
 		{

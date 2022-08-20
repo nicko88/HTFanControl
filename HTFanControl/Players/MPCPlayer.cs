@@ -10,8 +10,8 @@ namespace HTFanControl.Players
     class MPCPlayer : IPlayer
     {
         private HttpClient _httpClient;
-
         private Settings _settings;
+        private string _playerID = null;
 
         public bool IsPlaying { get; private set; }
         public long VideoTime { get; private set; }
@@ -70,7 +70,16 @@ namespace HTFanControl.Players
 
         private void GetFileFromKodi()
         {
-            StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": 1 }", System.Text.Encoding.UTF8, "application/json");
+            if (_playerID is null)
+            {
+                StringContent playerIDJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetActivePlayers"", ""id"": 1}", System.Text.Encoding.UTF8, "application/json");
+                string playerIDJSONResponse = _httpClient.PostAsync($"http://{_settings.MediaPlayerIP}:8080/jsonrpc", playerIDJSONRequest).Result.Content.ReadAsStringAsync().Result;
+
+                using JsonDocument playerIdJSON = JsonDocument.Parse(playerIDJSONResponse);
+                _playerID = playerIdJSON.RootElement.GetProperty("result")[0].GetProperty("playerid").GetRawText();
+            }
+
+            StringContent filenameJSONRequest = new StringContent(@"{""jsonrpc"": ""2.0"", ""method"": ""Player.GetItem"", ""params"": {""properties"": [""file""], ""playerid"": 1}, ""id"": " + _playerID + "}", System.Text.Encoding.UTF8, "application/json");
 
             HttpClient httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(1);
