@@ -31,24 +31,8 @@ namespace HTFanControl.Controllers
                 Connect();
             }
 
-            string mqttTopic = cmd switch
-            {
-                "OFF" => _settings.MQTT_OFF_Topic,
-                "ECO" => _settings.MQTT_ECO_Topic,
-                "LOW" => _settings.MQTT_LOW_Topic,
-                "MED" => _settings.MQTT_MED_Topic,
-                "HIGH" => _settings.MQTT_HIGH_Topic,
-                _ => _settings.MQTT_OFF_Topic,
-            };
-            string mqttPayload = cmd switch
-            {
-                "OFF" => _settings.MQTT_OFF_Payload,
-                "ECO" => _settings.MQTT_ECO_Payload,
-                "LOW" => _settings.MQTT_LOW_Payload,
-                "MED" => _settings.MQTT_MED_Payload,
-                "HIGH" => _settings.MQTT_HIGH_Payload,
-                _ => _settings.MQTT_OFF_Payload,
-            };
+            string mqttTopic = _settings.MQTT_Topics[cmd] ?? _settings.MQTT_Topics["OFF"];
+            string mqttPayload = _settings.MQTT_Payloads[cmd] ?? _settings.MQTT_Payloads["OFF"];
 
             //case when using IR over MQTT and fan needs to be turned ON before a command can be sent
             if (_ONcmd && _isOFF)
@@ -58,15 +42,15 @@ namespace HTFanControl.Controllers
                     try
                     {
                         MqttApplicationMessage message = new MqttApplicationMessageBuilder()
-                            .WithTopic(_settings.MQTT_ON_Topic)
-                            .WithPayload(_settings.MQTT_ON_Payload)
+                            .WithTopic(_settings.MQTT_Topics["ON"])
+                            .WithPayload(_settings.MQTT_Payloads["ON"])
                             .Build();
 
                         _mqttClient.PublishAsync(message);
                     }
                     catch
                     {
-                        ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed turning fan ON by sending Topic: ""{_settings.MQTT_ON_Topic}"" and Payload: ""{_settings.MQTT_ON_Payload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
+                        ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed turning fan ON by sending Topic: ""{_settings.MQTT_Topics["ON"]}"" and Payload: ""{_settings.MQTT_Payloads["ON"]}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                         return false;
                     }
 

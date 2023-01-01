@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
 namespace HTFanControl.Util
 {
@@ -19,18 +20,8 @@ namespace HTFanControl.Util
         public int MQTT_Port { get; set; }
         public string MQTT_User { get; set; }
         public string MQTT_Pass { get; set; }
-        public string MQTT_OFF_Topic { get; set; }
-        public string MQTT_OFF_Payload { get; set; }
-        public string MQTT_ECO_Topic { get; set; }
-        public string MQTT_ECO_Payload { get; set; }
-        public string MQTT_LOW_Topic { get; set; }
-        public string MQTT_LOW_Payload { get; set; }
-        public string MQTT_MED_Topic { get; set; }
-        public string MQTT_MED_Payload { get; set; }
-        public string MQTT_HIGH_Topic { get; set; }
-        public string MQTT_HIGH_Payload { get; set; }
-        public string MQTT_ON_Topic { get; set; }
-        public string MQTT_ON_Payload { get; set; }
+        public Dictionary<string,string> MQTT_Topics { get; set; }
+        public Dictionary<string,string> MQTT_Payloads { get; set; }
         public int MQTT_ON_Delay { get; set; }
         public string AudioDevice { get; set; }
         public string PlexToken { get; set; }
@@ -65,16 +56,18 @@ namespace HTFanControl.Util
                 settings.MediaPlayerPort = 8080;
                 settings.ControllerType = "MQTT";
                 settings.MQTT_IP = "127.0.0.1";
-                settings.MQTT_OFF_Topic = "cmnd/HTFan/EVENT";
-                settings.MQTT_OFF_Payload = "s0";
-                settings.MQTT_ECO_Topic = "cmnd/HTFan/EVENT";
-                settings.MQTT_ECO_Payload = "s1";
-                settings.MQTT_LOW_Topic = "cmnd/HTFan/EVENT";
-                settings.MQTT_LOW_Payload = "s2";
-                settings.MQTT_MED_Topic = "cmnd/HTFan/EVENT";
-                settings.MQTT_MED_Payload = "s3";
-                settings.MQTT_HIGH_Topic = "cmnd/HTFan/EVENT";
-                settings.MQTT_HIGH_Payload = "s4";
+                settings.MQTT_Topics = new Dictionary<string, string>();
+                settings.MQTT_Topics.Add("OFF", "cmnd/HTFan/EVENT");
+                settings.MQTT_Topics.Add("ECO", "cmnd/HTFan/EVENT");
+                settings.MQTT_Topics.Add("LOW", "cmnd/HTFan/EVENT");
+                settings.MQTT_Topics.Add("MED", "cmnd/HTFan/EVENT");
+                settings.MQTT_Topics.Add("HIGH", "cmnd/HTFan/EVENT");
+                settings.MQTT_Payloads = new Dictionary<string, string>();
+                settings.MQTT_Payloads.Add("OFF", "s0");
+                settings.MQTT_Payloads.Add("ECO", "s1");
+                settings.MQTT_Payloads.Add("LOW", "s2");
+                settings.MQTT_Payloads.Add("MED", "s3");
+                settings.MQTT_Payloads.Add("HIGH", "s4");
                 settings.GlobalOffsetMS = 2000;
                 settings.ECOSpinupOffsetMS = 1400;
                 settings.LOWSpinupOffsetMS = 1200;

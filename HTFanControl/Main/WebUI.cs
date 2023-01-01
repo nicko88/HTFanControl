@@ -380,18 +380,18 @@ namespace HTFanControl.Main
             html = html.Replace("{MqttUser}", _HTFanCtrl._settings.MQTT_User);
             html = html.Replace("{MqttPass}", _HTFanCtrl._settings.MQTT_Pass);
 
-            html = html.Replace("{MqttOFFtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Topic));
-            html = html.Replace("{MqttOFFpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Payload));
-            html = html.Replace("{MqttECOtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ECO_Topic));
-            html = html.Replace("{MqttECOpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ECO_Payload));
-            html = html.Replace("{MqttLOWtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_LOW_Topic));
-            html = html.Replace("{MqttLOWpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_LOW_Payload));
-            html = html.Replace("{MqttMEDtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_MED_Topic));
-            html = html.Replace("{MqttMEDpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_MED_Payload));
-            html = html.Replace("{MqttHIGHtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_HIGH_Topic));
-            html = html.Replace("{MqttHIGHpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_HIGH_Payload));
-            html = html.Replace("{MqttONtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Topic));
-            html = html.Replace("{MqttONpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Payload));
+            html = html.Replace("{MqttOFFtopic}", _HTFanCtrl._settings.MQTT_Topics.ContainsKey("OFF") ? _HTFanCtrl._settings.MQTT_Topics["OFF"] : "");
+            html = html.Replace("{MqttOFFpayload}", _HTFanCtrl._settings.MQTT_Payloads.ContainsKey("OFF") ? _HTFanCtrl._settings.MQTT_Payloads["OFF"] : "");
+            html = html.Replace("{MqttECOtopic}", _HTFanCtrl._settings.MQTT_Topics.ContainsKey("ECO") ? _HTFanCtrl._settings.MQTT_Topics["ECO"] : "");
+            html = html.Replace("{MqttECOpayload}", _HTFanCtrl._settings.MQTT_Payloads.ContainsKey("ECO") ? _HTFanCtrl._settings.MQTT_Payloads["ECO"] : "");
+            html = html.Replace("{MqttLOWtopic}", _HTFanCtrl._settings.MQTT_Topics.ContainsKey("LOW") ? _HTFanCtrl._settings.MQTT_Topics["LOW"] : "");
+            html = html.Replace("{MqttLOWpayload}", _HTFanCtrl._settings.MQTT_Payloads.ContainsKey("LOW") ? _HTFanCtrl._settings.MQTT_Payloads["LOW"] : "");
+            html = html.Replace("{MqttMEDtopic}", _HTFanCtrl._settings.MQTT_Topics.ContainsKey("MED") ? _HTFanCtrl._settings.MQTT_Topics["MED"] : "");
+            html = html.Replace("{MqttMEDpayload}", _HTFanCtrl._settings.MQTT_Payloads.ContainsKey("MED") ? _HTFanCtrl._settings.MQTT_Payloads["MED"] : "");
+            html = html.Replace("{MqttHIGHtopic}", _HTFanCtrl._settings.MQTT_Topics.ContainsKey("HIGH") ? _HTFanCtrl._settings.MQTT_Topics["HIGH"] : "");
+            html = html.Replace("{MqttHIGHpayload}", _HTFanCtrl._settings.MQTT_Payloads.ContainsKey("HIGH") ? _HTFanCtrl._settings.MQTT_Payloads["HIGH"] : "");
+            html = html.Replace("{MqttONtopic}", _HTFanCtrl._settings.MQTT_Topics.ContainsKey("ON") ? _HTFanCtrl._settings.MQTT_Topics["ON"] : "");
+            html = html.Replace("{MqttONpayload}", _HTFanCtrl._settings.MQTT_Payloads.ContainsKey("ON") ? _HTFanCtrl._settings.MQTT_Payloads["ON"] : "");
             html = html.Replace("{MqttONdelay}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Delay));
 
             if (_HTFanCtrl._settings.MediaPlayerType == "MPC")
@@ -478,18 +478,19 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MQTT_Port = int.TryParse(data.RootElement.GetProperty("MqttPort").GetString(), out int MqttPort) ? MqttPort : 1883;
                 _HTFanCtrl._settings.MQTT_User = data.RootElement.GetProperty("MqttUser").GetString();
                 _HTFanCtrl._settings.MQTT_Pass = data.RootElement.GetProperty("MqttPass").GetString();
-                _HTFanCtrl._settings.MQTT_OFF_Topic = data.RootElement.GetProperty("MqttOFFtopic").GetString();
-                _HTFanCtrl._settings.MQTT_OFF_Payload = data.RootElement.GetProperty("MqttOFFpayload").GetString();
-                _HTFanCtrl._settings.MQTT_ECO_Topic = data.RootElement.GetProperty("MqttECOtopic").GetString();
-                _HTFanCtrl._settings.MQTT_ECO_Payload = data.RootElement.GetProperty("MqttECOpayload").GetString();
-                _HTFanCtrl._settings.MQTT_LOW_Topic = data.RootElement.GetProperty("MqttLOWtopic").GetString();
-                _HTFanCtrl._settings.MQTT_LOW_Payload = data.RootElement.GetProperty("MqttLOWpayload").GetString();
-                _HTFanCtrl._settings.MQTT_MED_Topic = data.RootElement.GetProperty("MqttMEDtopic").GetString();
-                _HTFanCtrl._settings.MQTT_MED_Payload = data.RootElement.GetProperty("MqttMEDpayload").GetString();
-                _HTFanCtrl._settings.MQTT_HIGH_Topic = data.RootElement.GetProperty("MqttHIGHtopic").GetString();
-                _HTFanCtrl._settings.MQTT_HIGH_Payload = data.RootElement.GetProperty("MqttHIGHpayload").GetString();
-                _HTFanCtrl._settings.MQTT_ON_Topic = data.RootElement.GetProperty("MqttONtopic").GetString();
-                _HTFanCtrl._settings.MQTT_ON_Payload = data.RootElement.GetProperty("MqttONpayload").GetString();
+                _HTFanCtrl._settings.MQTT_Topics.Add("OFF", data.RootElement.GetProperty("MqttOFFtopic").GetString());
+                _HTFanCtrl._settings.MQTT_Topics.Add("ON", data.RootElement.GetProperty("MqttONtopic").GetString());
+                _HTFanCtrl._settings.MQTT_Topics.Add("ECO", data.RootElement.GetProperty("MqttECOtopic").GetString());
+                _HTFanCtrl._settings.MQTT_Topics.Add("LOW", data.RootElement.GetProperty("MqttLOWtopic").GetString());
+                _HTFanCtrl._settings.MQTT_Topics.Add("MED", data.RootElement.GetProperty("MqttMEDtopic").GetString());
+                _HTFanCtrl._settings.MQTT_Topics.Add("HIGH", data.RootElement.GetProperty("MqttHIGHtopic").GetString());
+                _HTFanCtrl._settings.MQTT_Payloads.Add("OFF", data.RootElement.GetProperty("MqttOFFpayload").GetString());
+                _HTFanCtrl._settings.MQTT_Payloads.Add("ON", data.RootElement.GetProperty("MqttONpayload").GetString());
+                _HTFanCtrl._settings.MQTT_Payloads.Add("ECO", data.RootElement.GetProperty("MqttECOpayload").GetString());
+                _HTFanCtrl._settings.MQTT_Payloads.Add("LOW", data.RootElement.GetProperty("MqttLOWpayload").GetString());
+                _HTFanCtrl._settings.MQTT_Payloads.Add("MED", data.RootElement.GetProperty("MqttMEDpayload").GetString());
+                _HTFanCtrl._settings.MQTT_Payloads.Add("HIGH", data.RootElement.GetProperty("MqttHIGHpayload").GetString());
+
                 _HTFanCtrl._settings.MQTT_ON_Delay = int.TryParse(data.RootElement.GetProperty("MqttONdelay").GetString(), out int MqttONdelay) ? MqttONdelay: 0;
                 _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._settings.MediaPlayerPort = int.TryParse(data.RootElement.GetProperty("MediaPlayerPort").GetString(), out int MediaPlayerPort) ? MediaPlayerPort : 0;
