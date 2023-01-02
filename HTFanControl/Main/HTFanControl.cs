@@ -108,6 +108,7 @@ namespace HTFanControl.Main
                     "Kodi" => new KodiPlayer(_settings),
                     "KodiMPC" => new KodiPlayer(_settings),
                     "Plex" => new PlexPlayer(_settings),
+                    "RokuPlex" => new RokuPlexPlayer(_settings),
                     _ => new MPCPlayer(_settings),
                 };
 

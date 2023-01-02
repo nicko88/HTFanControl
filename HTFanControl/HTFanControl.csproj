@@ -6,9 +6,9 @@
 	<ApplicationIcon>htfancontrol.ico</ApplicationIcon>
 	<Configurations>Debug;ReleaseWin;ReleaseLinux</Configurations>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <AssemblyVersion>0.3.3.0</AssemblyVersion>
-    <FileVersion>0.3.3.0</FileVersion>
-    <Version>0.3.3</Version>
+    <AssemblyVersion>0.3.3.1</AssemblyVersion>
+    <FileVersion>0.3.3.1</FileVersion>
+    <Version>0.3.3.1</Version>
     <Description>4D Theater Wind Effect - DIY Home Theater Project</Description>
     <Copyright>nicko88</Copyright>
     <Authors>nicko88</Authors>
@@ -73,10 +73,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="MQTTnet" Version="3.1.2" />
-    <PackageReference Include="OpenTK.OpenAL" Version="4.7.4" />
+    <PackageReference Include="OpenTK.OpenAL" Version="4.7.5" />
     <PackageReference Include="SoundFingerprinting" Version="8.5.1" />
     <PackageReference Include="SoundFingerprinting.Emy" Version="8.5.1" />
   </ItemGroup>

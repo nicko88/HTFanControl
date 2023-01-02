@@ -36,7 +36,7 @@ namespace HTFanControl.Controllers
                     string lircOnCMD = $"SEND_ONCE {_settings.LIRC_Remote} ON\n";
                     SendLIRCBytes(Encoding.ASCII.GetBytes(lircOnCMD));
 
-                    Thread.Sleep(_settings.MQTT_ON_Delay);
+                    Thread.Sleep(_settings.LIRC_ON_Delay);
                 }
                 //fan is already OFF, but it's being asked to turn OFF, so don't send a command, because that would cause it to turn ON again if ON/OFF are the same IR command
                 else

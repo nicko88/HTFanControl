@@ -399,6 +399,7 @@ namespace HTFanControl.Main
                 html = html.Replace("{MPC}", "checked");
                 html = html.Replace("{Kodi}", "");
                 html = html.Replace("{Plex}", "");
+                html = html.Replace("{RokuPlex}", "");
                 html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "MPC-HC/BE IP");
             }
@@ -407,6 +408,7 @@ namespace HTFanControl.Main
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "checked");
                 html = html.Replace("{Plex}", "");
+                html = html.Replace("{RokuPlex}", "");
                 html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "Kodi IP");
             }
@@ -415,6 +417,16 @@ namespace HTFanControl.Main
                 html = html.Replace("{MPC}", "");
                 html = html.Replace("{Kodi}", "");
                 html = html.Replace("{Plex}", "checked");
+                html = html.Replace("{RokuPlex}", "");
+                html = html.Replace("{Audio}", "");
+                html = html.Replace("{lblPlayer}", "Plex Media Server IP");
+            }
+            else if (_HTFanCtrl._settings.MediaPlayerType == "RokuPlex")
+            {
+                html = html.Replace("{MPC}", "");
+                html = html.Replace("{Kodi}", "");
+                html = html.Replace("{Plex}", "");
+                html = html.Replace("{RokuPlex}", "checked");
                 html = html.Replace("{Audio}", "");
                 html = html.Replace("{lblPlayer}", "Plex Media Server IP");
             }
