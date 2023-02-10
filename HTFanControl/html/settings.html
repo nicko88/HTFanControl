@@ -60,6 +60,18 @@
                 MqttONtopic: document.getElementById('MqttONtopic').value,
 				MqttONpayload: document.getElementById('MqttONpayload').value,
 				MqttONdelay: document.getElementById('MqttONdelay').value,
+                HttpUser: document.getElementById('HttpUser').value,
+                HttpPass: document.getElementById('HttpPass').value,
+                HttpOFFurl: document.getElementById('HttpOFFurl').value,
+				HttpOFFpayload: document.getElementById('HttpOFFpayload').value,
+                HttpECOurl: document.getElementById('HttpECOurl').value,
+				HttpECOpayload: document.getElementById('HttpECOpayload').value,
+                HttpLOWurl: document.getElementById('HttpLOWurl').value,
+				HttpLOWpayload: document.getElementById('HttpLOWpayload').value,
+                HttpMEDurl: document.getElementById('HttpMEDurl').value,
+				HttpMEDpayload: document.getElementById('HttpMEDpayload').value,
+                HttpHIGHurl: document.getElementById('HttpHIGHurl').value,
+                HttpHIGHpayload: document.getElementById('HttpHIGHpayload').value,
 				MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
 				MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
 				GlobalOffset: document.getElementById('GlobalOffset').value,
@@ -97,12 +109,20 @@
 		{
 			document.getElementById('lircDiv').style.display = 'block';
 			document.getElementById('mqttDiv').style.display = 'none';
+            document.getElementById('httpDiv').style.display = 'none';
 		}
 		function mqtt()
 		{
 			document.getElementById('lircDiv').style.display = 'none';
 			document.getElementById('mqttDiv').style.display = 'block';
+            document.getElementById('httpDiv').style.display = 'none';
 		}
+		function http()
+		{
+            document.getElementById('lircDiv').style.display = 'none';
+			document.getElementById('mqttDiv').style.display = 'none';
+            document.getElementById('httpDiv').style.display = 'block';
+        }
 		function mpc()
 		{
 			document.getElementById('MediaPlayerPort').value = '13579';
@@ -163,7 +183,14 @@
 			{
 				document.getElementById('mqttDiv').style.display = 'block';
 				document.getElementById('lircDiv').style.display = 'none';
+                document.getElementById('httpDiv').style.display = 'none';
 			}
+			if (document.getElementById('HTTP').checked)
+			{
+				document.getElementById('mqttDiv').style.display = 'none';
+                document.getElementById('lircDiv').style.display = 'none';
+                document.getElementById('httpDiv').style.display = 'block';
+            }
 		}
 
 		window.addEventListener('DOMContentLoaded', showforms, false);
@@ -314,6 +341,10 @@
 				<input class="form-check-input" type="radio" name="Controller" id="MQTT" value="MQTT" onclick="mqtt()" {MQTT}>
 				<label class="form-check-label" for="MQTT">MQTT</label>
 			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="Controller" id="HTTP" value="HTTP" onclick="http()" {HTTP}>
+				<label class="form-check-label" for="HTTP">HTTP</label>
+			</div>
 			<div class="form-check form-check-inline hidelinux">
 				<input class="form-check-input" type="radio" name="Controller" id="LIRC" value="LIRC" onclick="lirc()" {LIRC}>
 				<label class="form-check-label" for="LIRC">LIRC</label>
@@ -368,6 +399,33 @@
 			<div class="nitem" style="flex-grow: 1;"><b>ON Topic</b><input type="text" class="form-control" id="MqttONtopic" value="{MqttONtopic}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>ON Payload</b><input type="text" class="form-control" id="MqttONpayload" value="{MqttONpayload}"></div>
 			<div class="nitem" style="flex-grow: 1;"><b>ON Delay</b><input type="number" class="form-control" id="MqttONdelay" value="{MqttONdelay}"></div>
+		</div>
+	</div>
+
+	<div id="httpDiv" style="display: none; padding-bottom: 5px;">
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>HTTP User (optional)</b><input type="text" class="form-control" id="HttpUser" value="{HttpUser}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Pass or bearer (optional)</b><input type="text" class="form-control" id="HttpPass" value="{HttpPass}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>OFF URL</b><input type="text" class="form-control" id="HttpOFFurl" value="{HttpOFFurl}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>OFF POST Data (optional)</b><input type="text" class="form-control" id="HttpOFFpayload" value="{HttpOFFpayload}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>ECO URL</b><input type="text" class="form-control" id="HttpECOurl" value="{HttpECOurl}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>ECO POST Data (optional)</b><input type="text" class="form-control" id="HttpECOpayload" value="{HttpECOpayload}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>LOW URL</b><input type="text" class="form-control" id="HttpLOWurl" value="{HttpLOWurl}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>LOW POST Data (optional)</b><input type="text" class="form-control" id="HttpLOWpayload" value="{HttpLOWpayload}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>MED URL</b><input type="text" class="form-control" id="HttpMEDurl" value="{HttpMEDurl}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>MED POST Data (optional)</b><input type="text" class="form-control" id="HttpMEDpayload" value="{HttpMEDpayload}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 2;"><b>HIGH URL</b><input type="text" class="form-control" id="HttpHIGHurl" value="{HttpHIGHurl}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>HIGH POST Data (optional)</b><input type="text" class="form-control" id="HttpHIGHpayload" value="{HttpHIGHpayload}"></div>
 		</div>
 	</div>
 

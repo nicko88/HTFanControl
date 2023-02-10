@@ -32,6 +32,18 @@ namespace HTFanControl.Util
         public string MQTT_ON_Topic { get; set; }
         public string MQTT_ON_Payload { get; set; }
         public int MQTT_ON_Delay { get; set; }
+        public string HTTP_User { get; set; }
+        public string HTTP_Pass { get; set; }
+        public string HTTP_OFF_URL { get; set; }
+        public string HTTP_OFF_Payload { get; set; }
+        public string HTTP_ECO_URL { get; set; }
+        public string HTTP_ECO_Payload { get; set; }
+        public string HTTP_LOW_URL { get; set; }
+        public string HTTP_LOW_Payload { get; set; }
+        public string HTTP_MED_URL { get; set; }
+        public string HTTP_MED_Payload { get; set; }
+        public string HTTP_HIGH_URL { get; set; }
+        public string HTTP_HIGH_Payload { get; set; }
         public string AudioDevice { get; set; }
         public string PlexToken { get; set; }
         public string PlexClientName { get; set; }

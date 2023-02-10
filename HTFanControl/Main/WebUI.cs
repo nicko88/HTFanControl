@@ -363,10 +363,20 @@ namespace HTFanControl.Main
             if (_HTFanCtrl._settings.ControllerType == "LIRC")
             {
                 html = html.Replace("{LIRC}", "checked");
+                html = html.Replace("{MQTT}", "");
+                html = html.Replace("{HTTP}", "");
             }
             else if (_HTFanCtrl._settings.ControllerType == "MQTT")
             {
+                html = html.Replace("{LIRC}", "");
                 html = html.Replace("{MQTT}", "checked");
+                html = html.Replace("{HTTP}", "");
+            }
+            else if (_HTFanCtrl._settings.ControllerType == "HTTP")
+            {
+                html = html.Replace("{LIRC}", "");
+                html = html.Replace("{MQTT}", "");
+                html = html.Replace("{HTTP}", "checked");
             }
 
             html = html.Replace("{LircIP}", _HTFanCtrl._settings.LIRC_IP);
@@ -393,6 +403,20 @@ namespace HTFanControl.Main
             html = html.Replace("{MqttONtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Topic));
             html = html.Replace("{MqttONpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Payload));
             html = html.Replace("{MqttONdelay}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Delay));
+
+            html = html.Replace("{HttpUser}", _HTFanCtrl._settings.HTTP_User);
+            html = html.Replace("{HttpPass}", _HTFanCtrl._settings.HTTP_Pass);
+
+            html = html.Replace("{HttpOFFurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_URL));
+            html = html.Replace("{HttpOFFpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_Payload));
+            html = html.Replace("{HttpECOurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_URL));
+            html = html.Replace("{HttpECOpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_Payload));
+            html = html.Replace("{HttpLOWurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_URL));
+            html = html.Replace("{HttpLOWpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_Payload));
+            html = html.Replace("{HttpMEDurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_URL));
+            html = html.Replace("{HttpMEDpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_Payload));
+            html = html.Replace("{HttpHIGHurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_URL));
+            html = html.Replace("{HttpHIGHpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_Payload));
 
             if (_HTFanCtrl._settings.MediaPlayerType == "MPC")
             {
@@ -503,6 +527,18 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MQTT_ON_Topic = data.RootElement.GetProperty("MqttONtopic").GetString();
                 _HTFanCtrl._settings.MQTT_ON_Payload = data.RootElement.GetProperty("MqttONpayload").GetString();
                 _HTFanCtrl._settings.MQTT_ON_Delay = int.TryParse(data.RootElement.GetProperty("MqttONdelay").GetString(), out int MqttONdelay) ? MqttONdelay: 0;
+                _HTFanCtrl._settings.HTTP_User = data.RootElement.GetProperty("HttpUser").GetString();
+                _HTFanCtrl._settings.HTTP_Pass = data.RootElement.GetProperty("HttpPass").GetString();
+                _HTFanCtrl._settings.HTTP_OFF_URL = data.RootElement.GetProperty("HttpOFFurl").GetString();
+                _HTFanCtrl._settings.HTTP_OFF_Payload = data.RootElement.GetProperty("HttpOFFpayload").GetString();
+                _HTFanCtrl._settings.HTTP_ECO_URL = data.RootElement.GetProperty("HttpECOurl").GetString();
+                _HTFanCtrl._settings.HTTP_ECO_Payload = data.RootElement.GetProperty("HttpECOpayload").GetString();
+                _HTFanCtrl._settings.HTTP_LOW_URL = data.RootElement.GetProperty("HttpLOWurl").GetString();
+                _HTFanCtrl._settings.HTTP_LOW_Payload = data.RootElement.GetProperty("HttpLOWpayload").GetString();
+                _HTFanCtrl._settings.HTTP_MED_URL = data.RootElement.GetProperty("HttpMEDurl").GetString();
+                _HTFanCtrl._settings.HTTP_MED_Payload = data.RootElement.GetProperty("HttpMEDpayload").GetString();
+                _HTFanCtrl._settings.HTTP_HIGH_URL = data.RootElement.GetProperty("HttpHIGHurl").GetString();
+                _HTFanCtrl._settings.HTTP_HIGH_Payload = data.RootElement.GetProperty("HttpHIGHpayload").GetString();
                 _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._settings.MediaPlayerPort = int.TryParse(data.RootElement.GetProperty("MediaPlayerPort").GetString(), out int MediaPlayerPort) ? MediaPlayerPort : 0;
                 _HTFanCtrl._settings.GlobalOffsetMS = int.TryParse(data.RootElement.GetProperty("GlobalOffset").GetString(), out int GlobalOffset) ? GlobalOffset : 0;
