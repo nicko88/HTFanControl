@@ -31,42 +31,67 @@ namespace HTFanControl.Controllers
                 Connect();
             }
 
-            string mqttTopic = cmd switch
+            string MQTT_Topic;
+            string MQTT_Payload;
+
+            if (!_settings.MQTT_Advanced_Mode)
             {
-                "OFF" => _settings.MQTT_OFF_Topic,
-                "ECO" => _settings.MQTT_ECO_Topic,
-                "LOW" => _settings.MQTT_LOW_Topic,
-                "MED" => _settings.MQTT_MED_Topic,
-                "HIGH" => _settings.MQTT_HIGH_Topic,
-                _ => _settings.MQTT_OFF_Topic,
-            };
-            string mqttPayload = cmd switch
+                MQTT_Topic = cmd switch
+                {
+                    "OFF" => _settings.MQTT_OFF_Topic,
+                    "ECO" => _settings.MQTT_ECO_Topic,
+                    "LOW" => _settings.MQTT_LOW_Topic,
+                    "MED" => _settings.MQTT_MED_Topic,
+                    "HIGH" => _settings.MQTT_HIGH_Topic,
+                    _ => null,
+                };
+                MQTT_Payload = cmd switch
+                {
+                    "OFF" => _settings.MQTT_OFF_Payload,
+                    "ECO" => _settings.MQTT_ECO_Payload,
+                    "LOW" => _settings.MQTT_LOW_Payload,
+                    "MED" => _settings.MQTT_MED_Payload,
+                    "HIGH" => _settings.MQTT_HIGH_Payload,
+                    _ => null,
+                };
+            }
+            else
             {
-                "OFF" => _settings.MQTT_OFF_Payload,
-                "ECO" => _settings.MQTT_ECO_Payload,
-                "LOW" => _settings.MQTT_LOW_Payload,
-                "MED" => _settings.MQTT_MED_Payload,
-                "HIGH" => _settings.MQTT_HIGH_Payload,
-                _ => _settings.MQTT_OFF_Payload,
-            };
+                _settings.MQTT_Topics.TryGetValue(cmd, out MQTT_Topic);
+                _settings.MQTT_Payloads.TryGetValue(cmd, out MQTT_Payload);
+            }
 
             //case when using IR over MQTT and fan needs to be turned ON before a command can be sent
             if (_ONcmd && _isOFF)
             {
                 if(cmd != "OFF")
                 {
+                    string ON_Topic = null;
+                    string ON_Payload = null;
+
                     try
                     {
+                        if (!_settings.MQTT_Advanced_Mode)
+                        {
+                            ON_Topic = _settings.MQTT_ON_Topic;
+                            ON_Payload = _settings.MQTT_ON_Payload;
+                        }
+                        else
+                        {
+                            _settings.MQTT_Topics.TryGetValue("ON", out ON_Topic);
+                            _settings.MQTT_Payloads.TryGetValue("ON", out ON_Payload);
+                        }
+
                         MqttApplicationMessage message = new MqttApplicationMessageBuilder()
-                            .WithTopic(_settings.MQTT_ON_Topic)
-                            .WithPayload(_settings.MQTT_ON_Payload)
+                            .WithTopic(ON_Topic)
+                            .WithPayload(ON_Payload)
                             .Build();
 
                         _mqttClient.PublishAsync(message);
                     }
                     catch
                     {
-                        ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed turning fan ON by sending Topic: ""{_settings.MQTT_ON_Topic}"" and Payload: ""{_settings.MQTT_ON_Payload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
+                        ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed turning fan ON by sending Topic: ""{ON_Topic}"" and Payload: ""{ON_Payload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                         return false;
                     }
 
@@ -84,8 +109,8 @@ namespace HTFanControl.Controllers
                 try
                 {
                     MqttApplicationMessage message = new MqttApplicationMessageBuilder()
-                        .WithTopic(mqttTopic)
-                        .WithPayload(mqttPayload)
+                        .WithTopic(MQTT_Topic)
+                        .WithPayload(MQTT_Payload)
                         .Build();
 
                     IAsyncResult result = _mqttClient.PublishAsync(message);
@@ -93,7 +118,7 @@ namespace HTFanControl.Controllers
                 }
                 catch
                 {
-                    ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed sending Topic: ""{mqttTopic}"" and Payload: ""{mqttPayload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
+                    ErrorStatus = @$"({DateTime.Now:h:mm:ss tt}) Failed sending Topic: ""{MQTT_Topic}"" and Payload: ""{MQTT_Payload}"" To: {_settings.MQTT_IP}:{_settings.MQTT_Port}";
                     return false;
                 }
             }

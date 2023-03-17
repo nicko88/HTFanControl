@@ -1,8 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
 
 namespace HTFanControl.Util
 {
@@ -10,37 +7,27 @@ namespace HTFanControl.Util
     {
         public static readonly string _rootPath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
 
-        public static string GetIP()
+        public static string OS
         {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
+            get
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork && !ip.ToString().StartsWith("127"))
+                string OS = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
+
+                if (OS.Contains("Windows"))
                 {
-                    return ip.ToString();
+                    OS = "win";
                 }
-            }
-            return "IPerror";
-        }
+                else if (OS.Contains("raspi"))
+                {
+                    OS = "raspi";
+                }
+                else
+                {
+                    OS = "linux";
+                }
 
-        public static string GetOS()
-        {
-            string OS = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-
-            if(OS.Contains("Windows"))
-            {
-                OS = "win";
+                return OS;
             }
-            else if(OS.Contains("raspi"))
-            {
-                OS = "raspi";
-            }
-            else
-            {
-                OS = "linux";
-            }
-
-            return OS;
         }
 
         public static void SetupWin(string port, string instanceName)
@@ -59,7 +46,7 @@ namespace HTFanControl.Util
                 {
                     adminCMD += " && ";
                 }
-                adminCMD += $"netsh http add urlacl url=http://*:{port}/ user=" + Environment.UserName;
+                adminCMD += $"netsh http add urlacl url=http://*:{port}/ user=%computername%\\%username%";
             }
 
             if (adminCMD != null)

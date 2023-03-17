@@ -42,11 +42,12 @@
 				LircIP: document.getElementById('LircIP').value,
 				LircPort: document.getElementById('LircPort').value,
 				LircRemote: document.getElementById('LircRemote').value,
-                LircONdelay: document.getElementById('LircONdelay').value,
+				LircONdelay: document.getElementById('LircONdelay').value,
 				MqttIP: document.getElementById('MqttIP').value,
 				MqttPort: document.getElementById('MqttPort').value,
                 MqttUser: document.getElementById('MqttUser').value,
-                MqttPass: document.getElementById('MqttPass').value,
+				MqttPass: document.getElementById('MqttPass').value,
+                MqttAdvancedMode: document.getElementById('MqttAdvancedMode').checked,
                 MqttOFFtopic: document.getElementById('MqttOFFtopic').value,
                 MqttOFFpayload: document.getElementById('MqttOFFpayload').value,
                 MqttECOtopic: document.getElementById('MqttECOtopic').value,
@@ -109,18 +110,31 @@
 		{
 			document.getElementById('lircDiv').style.display = 'block';
 			document.getElementById('mqttDiv').style.display = 'none';
+            document.getElementById('advMqttDiv').style.display = 'none';
             document.getElementById('httpDiv').style.display = 'none';
 		}
 		function mqtt()
 		{
 			document.getElementById('lircDiv').style.display = 'none';
-			document.getElementById('mqttDiv').style.display = 'block';
-            document.getElementById('httpDiv').style.display = 'none';
+			document.getElementById('httpDiv').style.display = 'none';
+
+            document.getElementById('advMqttDiv').style.display = 'block';
+
+			if (!document.getElementById('MqttAdvancedMode').checked)
+			{
+				document.getElementById('mqttDiv').style.display = 'block';
+                document.getElementById('advMqttMsg').style.display = 'none';
+			}
+			else
+			{
+                document.getElementById('advMqttMsg').style.display = 'block';
+            }
 		}
 		function http()
 		{
             document.getElementById('lircDiv').style.display = 'none';
 			document.getElementById('mqttDiv').style.display = 'none';
+            document.getElementById('advMqttDiv').style.display = 'none';
             document.getElementById('httpDiv').style.display = 'block';
         }
 		function mpc()
@@ -163,32 +177,48 @@
 
 		function showforms()
 		{
-			if (document.getElementById('Plex').checked)
+			document.getElementById('mediaPlayerDiv').style.display = 'block';
+
+			document.getElementById('plexDiv').style.display = 'none';
+			document.getElementById('audioDiv').style.display = 'none';
+            document.getElementById('mqttDiv').style.display = 'none';
+			document.getElementById('advMqttDiv').style.display = 'none';
+            document.getElementById('lircDiv').style.display = 'none';
+            document.getElementById('httpDiv').style.display = 'none';
+
+            if (document.getElementById('Plex').checked || document.getElementById('RokuPlex').checked)
 			{
 				document.getElementById('plexDiv').style.display = 'block';
 			}
 
-			if (document.getElementById('RokuPlex').checked)
-			{
-                document.getElementById('plexDiv').style.display = 'block';
-            }
-
 			if (document.getElementById('Audio').checked)
 			{
 				document.getElementById('audioDiv').style.display = 'block';
-				document.getElementById('mediaPlayerDiv').style.display = 'none';
+                document.getElementById('mediaPlayerDiv').style.display = 'none';
 			}
+
+			if (document.getElementById('LIRC').checked)
+			{
+                document.getElementById('lircDiv').style.display = 'block';
+            }
 
 			if (document.getElementById('MQTT').checked)
 			{
-				document.getElementById('mqttDiv').style.display = 'block';
-				document.getElementById('lircDiv').style.display = 'none';
-                document.getElementById('httpDiv').style.display = 'none';
+				document.getElementById('advMqttDiv').style.display = 'block';
+
+				if (!document.getElementById('MqttAdvancedMode').checked)
+				{
+					document.getElementById('mqttDiv').style.display = 'block';
+                    document.getElementById('advMqttMsg').style.display = 'none';
+				}
+				else
+				{
+                    document.getElementById('advMqttMsg').style.display = 'block';
+                }
 			}
+
 			if (document.getElementById('HTTP').checked)
 			{
-				document.getElementById('mqttDiv').style.display = 'none';
-                document.getElementById('lircDiv').style.display = 'none';
                 document.getElementById('httpDiv').style.display = 'block';
             }
 		}
@@ -362,6 +392,18 @@
 		</div>
 	</div>
 
+	<div id="advMqttDiv" style="display: none;" class="nrow">
+		<div class="nitem" style="flex-grow: 1;">
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="checkbox" id="MqttAdvancedMode" onclick="showforms()" {MqttAdvancedMode}>
+				<label class="form-check-label" for="MqttAdvancedMode">Advanced MQTT Mode</label>
+			</div>
+			<div id="advMqttMsg">
+				(Must manually define all MQTT commands in HTFanControlSettings.json)
+			</div>
+		</div>
+	</div>
+
 	<div id="mqttDiv" style="display: none; padding-bottom: 5px;">
 		<div class="nrow">
 			<div class="nitem" style="flex-grow: 1;"><b>MQTT Broker IP</b><input type="text" class="form-control" id="MqttIP" value="{MqttIP}"></div>
@@ -392,7 +434,7 @@
 			<div class="nitem" style="flex-grow: 1;"><b>HIGH Payload</b><input type="text" class="form-control" id="MqttHIGHpayload" value="{MqttHIGHpayload}"></div>
 		</div>
 		<div class="nrow">
-			<b style="font-size:larger">For IR Control Over MQTT Only</b>
+			<b style="font-size:larger">Only needed for IR control via MQTT</b>
 			<br />
 		</div>
 		<div class="nrow">
@@ -405,7 +447,7 @@
 	<div id="httpDiv" style="display: none; padding-bottom: 5px;">
 		<div class="nrow">
 			<div class="nitem" style="flex-grow: 1;"><b>HTTP User (optional)</b><input type="text" class="form-control" id="HttpUser" value="{HttpUser}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>Pass or bearer (optional)</b><input type="text" class="form-control" id="HttpPass" value="{HttpPass}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>Pass or Bearer (optional)</b><input type="text" class="form-control" id="HttpPass" value="{HttpPass}"></div>
 		</div>
 		<div class="nrow">
 			<div class="nitem" style="flex-grow: 2;"><b>OFF URL</b><input type="text" class="form-control" id="HttpOFFurl" value="{HttpOFFurl}"></div>

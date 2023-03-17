@@ -45,19 +45,17 @@ namespace HTFanControl
                 Directory.CreateDirectory(Path.Combine(ConfigHelper._rootPath, "tmp"));
             }
 
-            if (ConfigHelper.GetOS() == "win")
+            if (ConfigHelper.OS == "win")
             {
                 ConfigHelper.SetupWin(port, instanceName);
 #if (RELEASE || DEBUG) 
-                Task.Factory.StartNew(() => new FanTrayIcon.TrayIcon(ConfigHelper.GetIP(), port, instanceName));
+                Task.Factory.StartNew(() => new FanTrayIcon.TrayIcon(port, instanceName));
 #endif
             }
             else
             {
                 ConfigHelper.SetupLinux();
             }
-
-            Console.WriteLine($"http://{ConfigHelper.GetIP()}:{port}");
 
             _ = new Main.WebUI(port, instanceName);
         }

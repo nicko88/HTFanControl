@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.Win32;
@@ -11,7 +13,6 @@ namespace FanTrayIcon
 {
     public class TrayIcon
     {
-        string _IP;
         string _port;
         string _instanceName;
 
@@ -28,9 +29,31 @@ namespace FanTrayIcon
         const int SW_HIDE = 0;
         const int SW_SHOW = 5;
 
-        public TrayIcon(string IP, string port, string instanceName)
+        private static string IP
         {
-            _IP = IP;
+            get
+            {
+                string IP = "IPError";
+                foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if ((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet || item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211) &&
+                        !item.Description.ToLower().Contains("virtual") && !item.Name.ToLower().Contains("virtual") && item.OperationalStatus == OperationalStatus.Up)
+                    {
+                        foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
+                        {
+                            if (ip.Address.AddressFamily == AddressFamily.InterNetwork && !ip.Address.ToString().StartsWith("127"))
+                            {
+                                IP = ip.Address.ToString();
+                            }
+                        }
+                    }
+                }
+                return IP;
+            }
+        }
+
+        public TrayIcon(string port, string instanceName)
+        {
             _port = port;
             _instanceName = instanceName;
 
@@ -101,7 +124,7 @@ namespace FanTrayIcon
 
         private void itemWebUI_Click(object sender, EventArgs e)
         {
-            string url = $"http://{_IP}:{_port}";
+            string url = $"http://{IP}:{_port}";
 
             try
             {

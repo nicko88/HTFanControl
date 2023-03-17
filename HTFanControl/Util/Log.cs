@@ -6,8 +6,9 @@ namespace HTFanControl.Util
 {
     public class Log
     {
-        private readonly string _logPath = Path.Combine(ConfigHelper._rootPath, "EventLog.txt");
-        private static readonly string _traceLogPath = Path.Combine(ConfigHelper._rootPath, "TraceLog.txt");
+        private static readonly string _logPath = Path.Combine(ConfigHelper._rootPath, "eventlog.txt");
+        private static readonly string _traceLogPath = Path.Combine(ConfigHelper._rootPath, "tracelog.txt");
+        private static bool _traceLogEnabed = false;
 
         public LinkedList<string> RealtimeLog { get; } = new LinkedList<string>();
 
@@ -18,6 +19,11 @@ namespace HTFanControl.Util
                 File.Delete(_logPath);
             }
             catch { }
+
+            if(File.Exists(_traceLogPath))
+            {
+                _traceLogEnabed = true;
+            }
         }
 
         public void LogMsg(string line)
@@ -41,13 +47,16 @@ namespace HTFanControl.Util
 
         public static void LogTrace(string line)
         {
-            string timestamp = $"[{DateTime.Now:hh:mm:ss.fff}]: ";
-
-            try
+            if (_traceLogEnabed)
             {
-                File.AppendAllText(_traceLogPath, $"{timestamp}{line}{Environment.NewLine}");
+                string timestamp = $"[{DateTime.Now:hh:mm:ss.fff}]: ";
+
+                try
+                {
+                    File.AppendAllText(_traceLogPath, $"{timestamp}{line}{Environment.NewLine}");
+                }
+                catch { }
             }
-            catch { }
         }
     }
 }

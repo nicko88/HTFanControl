@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -32,6 +33,9 @@ namespace HTFanControl.Util
         public string MQTT_ON_Topic { get; set; }
         public string MQTT_ON_Payload { get; set; }
         public int MQTT_ON_Delay { get; set; }
+        public bool MQTT_Advanced_Mode { get; set; }
+        public Dictionary<string, string> MQTT_Topics { get; set; }
+        public Dictionary<string, string> MQTT_Payloads { get; set; }
         public string HTTP_User { get; set; }
         public string HTTP_Pass { get; set; }
         public string HTTP_OFF_URL { get; set; }

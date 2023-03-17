@@ -390,6 +390,11 @@ namespace HTFanControl.Main
             html = html.Replace("{MqttUser}", _HTFanCtrl._settings.MQTT_User);
             html = html.Replace("{MqttPass}", _HTFanCtrl._settings.MQTT_Pass);
 
+            if(_HTFanCtrl._settings.MQTT_Advanced_Mode)
+            {
+                html = html.Replace("{MqttAdvancedMode}", "checked");
+            }
+
             html = html.Replace("{MqttOFFtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Topic));
             html = html.Replace("{MqttOFFpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_OFF_Payload));
             html = html.Replace("{MqttECOtopic}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ECO_Topic));
@@ -514,6 +519,7 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MQTT_Port = int.TryParse(data.RootElement.GetProperty("MqttPort").GetString(), out int MqttPort) ? MqttPort : 1883;
                 _HTFanCtrl._settings.MQTT_User = data.RootElement.GetProperty("MqttUser").GetString();
                 _HTFanCtrl._settings.MQTT_Pass = data.RootElement.GetProperty("MqttPass").GetString();
+                _HTFanCtrl._settings.MQTT_Advanced_Mode = data.RootElement.GetProperty("MqttAdvancedMode").GetBoolean();
                 _HTFanCtrl._settings.MQTT_OFF_Topic = data.RootElement.GetProperty("MqttOFFtopic").GetString();
                 _HTFanCtrl._settings.MQTT_OFF_Payload = data.RootElement.GetProperty("MqttOFFpayload").GetString();
                 _HTFanCtrl._settings.MQTT_ECO_Topic = data.RootElement.GetProperty("MqttECOtopic").GetString();
@@ -550,8 +556,42 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MediaPlayerType = data.RootElement.GetProperty("MediaPlayer").GetString();
                 _HTFanCtrl._settings.PlexToken = data.RootElement.GetProperty("PlexToken").GetString();
 
+                if(_HTFanCtrl._settings.MQTT_Advanced_Mode && _HTFanCtrl._settings.MQTT_Topics is null)
+                {
+                    ConvertToAdvMQTT();
+                }
+                else
+                {
+                    _HTFanCtrl._settings.MQTT_Topics = null;
+                    _HTFanCtrl._settings.MQTT_Payloads = null;
+                }
+
                 Settings.SaveSettings(_HTFanCtrl._settings);
                 _HTFanCtrl.ReInitialize(true);
+            }
+        }
+
+        private void ConvertToAdvMQTT()
+        {
+            _HTFanCtrl._settings.MQTT_Topics = new Dictionary<string, string>();
+            _HTFanCtrl._settings.MQTT_Payloads = new Dictionary<string, string>();
+
+            _HTFanCtrl._settings.MQTT_Topics.Add("OFF", _HTFanCtrl._settings.MQTT_OFF_Topic);
+            _HTFanCtrl._settings.MQTT_Topics.Add("ECO", _HTFanCtrl._settings.MQTT_ECO_Topic);
+            _HTFanCtrl._settings.MQTT_Topics.Add("LOW", _HTFanCtrl._settings.MQTT_LOW_Topic);
+            _HTFanCtrl._settings.MQTT_Topics.Add("MED", _HTFanCtrl._settings.MQTT_MED_Topic);
+            _HTFanCtrl._settings.MQTT_Topics.Add("HIGH", _HTFanCtrl._settings.MQTT_HIGH_Topic);
+
+            _HTFanCtrl._settings.MQTT_Payloads.Add("OFF", _HTFanCtrl._settings.MQTT_OFF_Payload);
+            _HTFanCtrl._settings.MQTT_Payloads.Add("ECO", _HTFanCtrl._settings.MQTT_ECO_Payload);
+            _HTFanCtrl._settings.MQTT_Payloads.Add("LOW", _HTFanCtrl._settings.MQTT_LOW_Payload);
+            _HTFanCtrl._settings.MQTT_Payloads.Add("MED", _HTFanCtrl._settings.MQTT_MED_Payload);
+            _HTFanCtrl._settings.MQTT_Payloads.Add("HIGH", _HTFanCtrl._settings.MQTT_HIGH_Payload);
+
+            if (_HTFanCtrl._settings.MQTT_ON_Delay > 0)
+            {
+                _HTFanCtrl._settings.MQTT_Topics.Add("ON", _HTFanCtrl._settings.MQTT_ON_Topic);
+                _HTFanCtrl._settings.MQTT_Payloads.Add("ON", _HTFanCtrl._settings.MQTT_ON_Payload);
             }
         }
 
@@ -578,7 +618,7 @@ namespace HTFanControl.Main
 
                 if (_version != latest)
                 {
-                    if (ConfigHelper.GetOS() != "win")
+                    if (ConfigHelper.OS != "win")
                     {
                         sb.AppendLine(@"<button id=""btnupdate"" onclick=""linuxupdate();"" class=""btn btn-primary"">Update HTFanControl</button>");
                     }
@@ -891,7 +931,7 @@ namespace HTFanControl.Main
             }
             catch
             {
-                if (ConfigHelper.GetOS() == "win")
+                if (ConfigHelper.OS == "win")
                 {
                     sb.AppendLine("OpenAL not installed.");
                     sb.AppendLine("<br/>");
@@ -995,7 +1035,7 @@ namespace HTFanControl.Main
         private static string CrashlogsPage()
         {
             string html = GetHtml("crashlogs");
-            string[] crashlogs = new string[0];
+            string[] crashlogs = Array.Empty<string>();
             try
             {
                 crashlogs = Directory.GetFiles(Path.Combine(ConfigHelper._rootPath, "crashlogs"));
@@ -1013,7 +1053,7 @@ namespace HTFanControl.Main
             return html;
         }
 
-        private string ViewCrashlog(HttpListenerRequest request)
+        private static string ViewCrashlog(HttpListenerRequest request)
         {
             string html = "";
             string crashlogName = GetPostBody(request);

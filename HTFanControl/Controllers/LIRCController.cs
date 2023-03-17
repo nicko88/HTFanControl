@@ -13,14 +13,14 @@ namespace HTFanControl.Controllers
         private Settings _settings;
 
         private bool _isOFF = true;
-        private bool _ONcmd = false;
+        private bool _needONcmd = false;
 
         public string ErrorStatus { get; private set; }
 
         public LIRCController(Settings settings)
         {
             _settings = settings;
-            _ONcmd = _settings.LIRC_ON_Delay > 0;
+            _needONcmd = _settings.LIRC_ON_Delay > 0;
         }
 
         public bool SendCMD(string cmd)
@@ -29,7 +29,7 @@ namespace HTFanControl.Controllers
             bool goodResult = true;
 
             //case when fan needs to be turned ON before a command can be sent
-            if (_ONcmd && _isOFF)
+            if (_needONcmd && _isOFF)
             {
                 if (cmd != "OFF")
                 {
@@ -76,6 +76,7 @@ namespace HTFanControl.Controllers
             try
             {
                 _lircSocket.Send(cmd);
+                Log.LogTrace(Encoding.ASCII.GetString(cmd));
 
                 if ((_lircSocket.Poll(1000, SelectMode.SelectRead) && (_lircSocket.Available == 0)) || !_lircSocket.Connected)
                 {
@@ -95,6 +96,7 @@ namespace HTFanControl.Controllers
                     Connect();
 
                     _lircSocket.Send(cmd);
+                    Log.LogTrace(Encoding.ASCII.GetString(cmd));
 
                     if ((_lircSocket.Poll(1000, SelectMode.SelectRead) && (_lircSocket.Available == 0)) || !_lircSocket.Connected)
                     {
@@ -132,6 +134,11 @@ namespace HTFanControl.Controllers
                 _lircSocket.EndConnect(result);
 
                 Thread.Sleep(25);
+
+                if (ConfigHelper.OS != "win")
+                {
+                    SendLIRCBytes(Encoding.ASCII.GetBytes($"SET_TRANSMITTERS 1 2 3 4\n"));
+                }
             }
             catch
             {

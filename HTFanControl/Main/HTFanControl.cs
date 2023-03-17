@@ -406,7 +406,7 @@ namespace HTFanControl.Main
                             }
                         }
 
-                        if(timeCode != null)
+                        if (timeCode != null)
                         {
                             if (isFanCmd)
                             {
