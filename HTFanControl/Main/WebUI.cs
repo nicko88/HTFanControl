@@ -409,19 +409,26 @@ namespace HTFanControl.Main
             html = html.Replace("{MqttONpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Payload));
             html = html.Replace("{MqttONdelay}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.MQTT_ON_Delay));
 
-            html = html.Replace("{HttpUser}", _HTFanCtrl._settings.HTTP_User);
-            html = html.Replace("{HttpPass}", _HTFanCtrl._settings.HTTP_Pass);
-
             html = html.Replace("{HttpOFFurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_URL));
-            html = html.Replace("{HttpOFFpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_Payload));
+            html = html.Replace("{HttpOFFurl2}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_URL2));
+            html = html.Replace("{HttpOFFurl3}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_URL3));
+            html = html.Replace("{HttpOFFurl4}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_OFF_URL4));
             html = html.Replace("{HttpECOurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_URL));
-            html = html.Replace("{HttpECOpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_Payload));
+            html = html.Replace("{HttpECOurl2}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_URL2));
+            html = html.Replace("{HttpECOurl3}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_URL3));
+            html = html.Replace("{HttpECOurl4}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_ECO_URL4));
             html = html.Replace("{HttpLOWurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_URL));
-            html = html.Replace("{HttpLOWpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_Payload));
+            html = html.Replace("{HttpLOWurl2}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_URL2));
+            html = html.Replace("{HttpLOWurl3}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_URL3));
+            html = html.Replace("{HttpLOWurl4}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_LOW_URL4));
             html = html.Replace("{HttpMEDurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_URL));
-            html = html.Replace("{HttpMEDpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_Payload));
+            html = html.Replace("{HttpMEDurl2}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_URL2));
+            html = html.Replace("{HttpMEDurl3}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_URL3));
+            html = html.Replace("{HttpMEDurl4}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_MED_URL4));
             html = html.Replace("{HttpHIGHurl}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_URL));
-            html = html.Replace("{HttpHIGHpayload}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_Payload));
+            html = html.Replace("{HttpHIGHurl2}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_URL2));
+            html = html.Replace("{HttpHIGHurl3}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_URL3));
+            html = html.Replace("{HttpHIGHurl4}", HttpUtility.HtmlEncode(_HTFanCtrl._settings.HTTP_HIGH_URL4));
 
             if (_HTFanCtrl._settings.MediaPlayerType == "MPC")
             {
@@ -533,18 +540,26 @@ namespace HTFanControl.Main
                 _HTFanCtrl._settings.MQTT_ON_Topic = data.RootElement.GetProperty("MqttONtopic").GetString();
                 _HTFanCtrl._settings.MQTT_ON_Payload = data.RootElement.GetProperty("MqttONpayload").GetString();
                 _HTFanCtrl._settings.MQTT_ON_Delay = int.TryParse(data.RootElement.GetProperty("MqttONdelay").GetString(), out int MqttONdelay) ? MqttONdelay: 0;
-                _HTFanCtrl._settings.HTTP_User = data.RootElement.GetProperty("HttpUser").GetString();
-                _HTFanCtrl._settings.HTTP_Pass = data.RootElement.GetProperty("HttpPass").GetString();
                 _HTFanCtrl._settings.HTTP_OFF_URL = data.RootElement.GetProperty("HttpOFFurl").GetString();
-                _HTFanCtrl._settings.HTTP_OFF_Payload = data.RootElement.GetProperty("HttpOFFpayload").GetString();
+                _HTFanCtrl._settings.HTTP_OFF_URL2 = data.RootElement.GetProperty("HttpOFFurl2").GetString();
+                _HTFanCtrl._settings.HTTP_OFF_URL3 = data.RootElement.GetProperty("HttpOFFurl3").GetString();
+                _HTFanCtrl._settings.HTTP_OFF_URL4 = data.RootElement.GetProperty("HttpOFFurl4").GetString();
                 _HTFanCtrl._settings.HTTP_ECO_URL = data.RootElement.GetProperty("HttpECOurl").GetString();
-                _HTFanCtrl._settings.HTTP_ECO_Payload = data.RootElement.GetProperty("HttpECOpayload").GetString();
+                _HTFanCtrl._settings.HTTP_ECO_URL2 = data.RootElement.GetProperty("HttpECOurl2").GetString();
+                _HTFanCtrl._settings.HTTP_ECO_URL3 = data.RootElement.GetProperty("HttpECOurl3").GetString();
+                _HTFanCtrl._settings.HTTP_ECO_URL4 = data.RootElement.GetProperty("HttpECOurl4").GetString();
                 _HTFanCtrl._settings.HTTP_LOW_URL = data.RootElement.GetProperty("HttpLOWurl").GetString();
-                _HTFanCtrl._settings.HTTP_LOW_Payload = data.RootElement.GetProperty("HttpLOWpayload").GetString();
+                _HTFanCtrl._settings.HTTP_LOW_URL2 = data.RootElement.GetProperty("HttpLOWurl2").GetString();
+                _HTFanCtrl._settings.HTTP_LOW_URL3 = data.RootElement.GetProperty("HttpLOWurl3").GetString();
+                _HTFanCtrl._settings.HTTP_LOW_URL4 = data.RootElement.GetProperty("HttpLOWurl4").GetString();
                 _HTFanCtrl._settings.HTTP_MED_URL = data.RootElement.GetProperty("HttpMEDurl").GetString();
-                _HTFanCtrl._settings.HTTP_MED_Payload = data.RootElement.GetProperty("HttpMEDpayload").GetString();
+                _HTFanCtrl._settings.HTTP_MED_URL2 = data.RootElement.GetProperty("HttpMEDurl2").GetString();
+                _HTFanCtrl._settings.HTTP_MED_URL3 = data.RootElement.GetProperty("HttpMEDurl3").GetString();
+                _HTFanCtrl._settings.HTTP_MED_URL4 = data.RootElement.GetProperty("HttpMEDurl4").GetString();
                 _HTFanCtrl._settings.HTTP_HIGH_URL = data.RootElement.GetProperty("HttpHIGHurl").GetString();
-                _HTFanCtrl._settings.HTTP_HIGH_Payload = data.RootElement.GetProperty("HttpHIGHpayload").GetString();
+                _HTFanCtrl._settings.HTTP_HIGH_URL2 = data.RootElement.GetProperty("HttpHIGHurl2").GetString();
+                _HTFanCtrl._settings.HTTP_HIGH_URL3 = data.RootElement.GetProperty("HttpHIGHurl3").GetString();
+                _HTFanCtrl._settings.HTTP_HIGH_URL4 = data.RootElement.GetProperty("HttpHIGHurl4").GetString();
                 _HTFanCtrl._settings.MediaPlayerIP = data.RootElement.GetProperty("MediaPlayerIP").GetString();
                 _HTFanCtrl._settings.MediaPlayerPort = int.TryParse(data.RootElement.GetProperty("MediaPlayerPort").GetString(), out int MediaPlayerPort) ? MediaPlayerPort : 0;
                 _HTFanCtrl._settings.GlobalOffsetMS = int.TryParse(data.RootElement.GetProperty("GlobalOffset").GetString(), out int GlobalOffset) ? GlobalOffset : 0;

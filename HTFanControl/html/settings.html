@@ -61,18 +61,26 @@
                 MqttONtopic: document.getElementById('MqttONtopic').value,
 				MqttONpayload: document.getElementById('MqttONpayload').value,
 				MqttONdelay: document.getElementById('MqttONdelay').value,
-                HttpUser: document.getElementById('HttpUser').value,
-                HttpPass: document.getElementById('HttpPass').value,
-                HttpOFFurl: document.getElementById('HttpOFFurl').value,
-				HttpOFFpayload: document.getElementById('HttpOFFpayload').value,
+				HttpOFFurl: document.getElementById('HttpOFFurl').value,
+				HttpOFFurl2: document.getElementById('HttpOFFurl2').value,
+				HttpOFFurl3: document.getElementById('HttpOFFurl3').value,
+                HttpOFFurl4: document.getElementById('HttpOFFurl4').value,
                 HttpECOurl: document.getElementById('HttpECOurl').value,
-				HttpECOpayload: document.getElementById('HttpECOpayload').value,
+				HttpECOurl2: document.getElementById('HttpECOurl2').value,
+				HttpECOurl3: document.getElementById('HttpECOurl3').value,
+                HttpECOurl4: document.getElementById('HttpECOurl4').value,
                 HttpLOWurl: document.getElementById('HttpLOWurl').value,
-				HttpLOWpayload: document.getElementById('HttpLOWpayload').value,
+				HttpLOWurl2: document.getElementById('HttpLOWurl2').value,
+				HttpLOWurl3: document.getElementById('HttpLOWurl3').value,
+                HttpLOWurl4: document.getElementById('HttpLOWurl4').value,
                 HttpMEDurl: document.getElementById('HttpMEDurl').value,
-				HttpMEDpayload: document.getElementById('HttpMEDpayload').value,
+				HttpMEDurl2: document.getElementById('HttpMEDurl2').value,
+				HttpMEDurl3: document.getElementById('HttpMEDurl3').value,
+                HttpMEDurl4: document.getElementById('HttpMEDurl4').value,
                 HttpHIGHurl: document.getElementById('HttpHIGHurl').value,
-                HttpHIGHpayload: document.getElementById('HttpHIGHpayload').value,
+				HttpHIGHurl2: document.getElementById('HttpHIGHurl2').value,
+				HttpHIGHurl3: document.getElementById('HttpHIGHurl3').value,
+                HttpHIGHurl4: document.getElementById('HttpHIGHurl4').value,
 				MediaPlayerIP: document.getElementById('MediaPlayerIP').value,
 				MediaPlayerPort: document.getElementById('MediaPlayerPort').value,
 				GlobalOffset: document.getElementById('GlobalOffset').value,
@@ -446,28 +454,64 @@
 
 	<div id="httpDiv" style="display: none; padding-bottom: 5px;">
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 1;"><b>HTTP User (optional)</b><input type="text" class="form-control" id="HttpUser" value="{HttpUser}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>Pass or Bearer (optional)</b><input type="text" class="form-control" id="HttpPass" value="{HttpPass}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>OFF URLs</b><input type="text" class="form-control" id="HttpOFFurl" value="{HttpOFFurl}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>OFF URL</b><input type="text" class="form-control" id="HttpOFFurl" value="{HttpOFFurl}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>OFF POST Data (optional)</b><input type="text" class="form-control" id="HttpOFFpayload" value="{HttpOFFpayload}"></div>
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpOFFurl2" value="{HttpOFFurl2}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>ECO URL</b><input type="text" class="form-control" id="HttpECOurl" value="{HttpECOurl}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>ECO POST Data (optional)</b><input type="text" class="form-control" id="HttpECOpayload" value="{HttpECOpayload}"></div>
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpOFFurl3" value="{HttpOFFurl3}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>LOW URL</b><input type="text" class="form-control" id="HttpLOWurl" value="{HttpLOWurl}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>LOW POST Data (optional)</b><input type="text" class="form-control" id="HttpLOWpayload" value="{HttpLOWpayload}"></div>
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpOFFurl4" value="{HttpOFFurl4}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>MED URL</b><input type="text" class="form-control" id="HttpMEDurl" value="{HttpMEDurl}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>MED POST Data (optional)</b><input type="text" class="form-control" id="HttpMEDpayload" value="{HttpMEDpayload}"></div>
+			<div class="nitem" style="flex-grow: 1;"><b>ECO URLs</b><input type="text" class="form-control" id="HttpECOurl" value="{HttpECOurl}"></div>
 		</div>
 		<div class="nrow">
-			<div class="nitem" style="flex-grow: 2;"><b>HIGH URL</b><input type="text" class="form-control" id="HttpHIGHurl" value="{HttpHIGHurl}"></div>
-			<div class="nitem" style="flex-grow: 1;"><b>HIGH POST Data (optional)</b><input type="text" class="form-control" id="HttpHIGHpayload" value="{HttpHIGHpayload}"></div>
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpECOurl2" value="{HttpECOurl2}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpECOurl3" value="{HttpECOurl3}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpECOurl4" value="{HttpECOurl4}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>LOW URLs</b><input type="text" class="form-control" id="HttpLOWurl" value="{HttpLOWurl}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpLOWurl2" value="{HttpLOWurl2}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpLOWurl3" value="{HttpLOWurl3}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpLOWurl4" value="{HttpLOWurl4}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>MED URLs</b><input type="text" class="form-control" id="HttpMEDurl" value="{HttpMEDurl}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpMEDurl2" value="{HttpMEDurl2}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpMEDurl3" value="{HttpMEDurl3}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpMEDurl4" value="{HttpMEDurl4}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><b>HIGH URLs</b><input type="text" class="form-control" id="HttpHIGHurl" value="{HttpHIGHurl}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpHIGHurl2" value="{HttpHIGHurl2}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpHIGHurl3" value="{HttpHIGHurl3}"></div>
+		</div>
+		<div class="nrow">
+			<div class="nitem" style="flex-grow: 1;"><input type="text" class="form-control" id="HttpHIGHurl4" value="{HttpHIGHurl4}"></div>
 		</div>
 	</div>
 
