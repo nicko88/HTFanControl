@@ -110,6 +110,7 @@ namespace HTFanControl.Main
                     "KodiMPC" => new KodiPlayer(_settings),
                     "Plex" => new PlexPlayer(_settings),
                     "RokuPlex" => new RokuPlexPlayer(_settings),
+                    "Zidoo" => new ZidooPlayer(_settings),
                     _ => new MPCPlayer(_settings),
                 };
 

@@ -161,6 +161,14 @@
 			document.getElementById('plexDiv').style.display = 'none';
 			document.getElementById('audioDiv').style.display = 'none';
 		}
+		function zidoo()
+		{
+			document.getElementById('MediaPlayerPort').value = '9529';
+			document.getElementById("lblPlayer").innerHTML = "Zidoo IP";
+            document.getElementById('mediaPlayerDiv').style.display = 'block';
+            document.getElementById('plexDiv').style.display = 'none';
+            document.getElementById('audioDiv').style.display = 'none';
+		}
 		function plex(roku)
 		{
 			document.getElementById('MediaPlayerPort').value = '32400';
@@ -330,6 +338,10 @@
 			<div class="form-check form-check-inline">
 				<input class="form-check-input" type="radio" name="MediaPlayer" id="MPC" value="MPC" onclick="mpc()" {MPC}>
 				<label class="form-check-label" for="MPC">MPC-HC/BE</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input class="form-check-input" type="radio" name="MediaPlayer" id="Zidoo" value="Zidoo" onclick="zidoo()" {Zidoo}>
+				<label class="form-check-label" for="Zidoo">Zidoo</label>
 			</div>
 			<div class="form-check form-check-inline">
 				<input class="form-check-input" type="radio" name="MediaPlayer" id="RokuPlex" value="RokuPlex" onclick="plex(true)" {RokuPlex}>
