@@ -27,16 +27,15 @@ namespace HTFanControl.Main
         public double _offset;
         public bool _offsetEnabled = false;
 
-        public List<Tuple<TimeSpan, string>> _videoTimeCodes;
-
         private PositionTimer _videoTimer;
         private readonly Timer _syncTimer;
         private IPlayer _mediaPlayer;
         public AudioSync _audioSync;
         public IController _fanController;
 
-        public Settings _settings;
+        public List<Tuple<TimeSpan, string>> _videoTimeCodes;
 
+        public Settings _settings;
         public Log _log;
 
         public HTFanControl()
@@ -47,8 +46,8 @@ namespace HTFanControl.Main
             Settings.SaveSettings(_settings);
 
             _syncTimer = new Timer(SyncTimerTick, null, Timeout.Infinite, Timeout.Infinite);
-            SelectSyncSource();
 
+            SelectSyncSource();
             SelectController();
         }
 

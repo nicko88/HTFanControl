@@ -40,9 +40,20 @@ namespace HTFanControl.Players
                 string playerStatusJSONResponse = _httpClient.GetStringAsync($"http://{_settings.MediaPlayerIP}:{_settings.MediaPlayerPort}/ZidooVideoPlay/getPlayStatus").Result;
                 using JsonDocument playerstatusJSON = JsonDocument.Parse(playerStatusJSONResponse);
 
-                FileName = new string(playerstatusJSON.RootElement.GetProperty("video").GetProperty("title").GetString().Where(ch => !Path.GetInvalidFileNameChars().Contains(ch)).ToArray());
                 VideoTime = playerstatusJSON.RootElement.GetProperty("video").GetProperty("currentPosition").GetInt32() + sw.ElapsedMilliseconds;
                 sw.Stop();
+
+                FilePath = playerstatusJSON.RootElement.GetProperty("video").GetProperty("path").GetString();
+                try
+                {
+                    FileName = Path.GetFileNameWithoutExtension(FilePath);
+                }
+                catch { }
+
+                if(string.IsNullOrEmpty(FileName))
+                {
+                    FileName = new string(playerstatusJSON.RootElement.GetProperty("video").GetProperty("title").GetString().Where(ch => !Path.GetInvalidFileNameChars().Contains(ch)).ToArray());
+                }
 
                 int playState = playerstatusJSON.RootElement.GetProperty("video").GetProperty("status").GetInt32();
 
