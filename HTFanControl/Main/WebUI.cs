@@ -591,7 +591,7 @@ namespace HTFanControl.Main
                 {
                     ConvertToAdvMQTT();
                 }
-                else
+                else if (!_HTFanCtrl._settings.MQTT_Advanced_Mode)
                 {
                     _HTFanCtrl._settings.MQTT_Topics = null;
                     _HTFanCtrl._settings.MQTT_Payloads = null;

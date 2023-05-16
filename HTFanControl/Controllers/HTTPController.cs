@@ -51,10 +51,6 @@ namespace HTFanControl.Controllers
                     SendHTTPPost(_settings.HTTP_HIGH_URL4);
                     break;
                 default:
-                    SendHTTPPost(_settings.HTTP_OFF_URL);
-                    SendHTTPPost(_settings.HTTP_OFF_URL2);
-                    SendHTTPPost(_settings.HTTP_OFF_URL3);
-                    SendHTTPPost(_settings.HTTP_OFF_URL4);
                     break;
             }
 
