@@ -378,7 +378,7 @@ namespace HTFanControl.Main
                         }
                     }
                     //non-comment or blank lines
-                    else if (!line.StartsWith(@"\\") && !line.StartsWith(@"//") && line.Length > 0)
+                    else if (!line.StartsWith(@"\\") && !line.StartsWith(@"//") && line.Trim().Length > 0)
                     {
                         //parse line
                         string[] lineData = line.Split(',');

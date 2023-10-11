@@ -1,18 +1,14 @@
 #!/bin/bash
 
-case $(uname -m) in
-	*"arm"*)
-	file="HTFanControl_RasPi.zip"
-	;;
-	
-	*"aarch"*)
-	file="HTFanControl_RasPi64.zip"
-	;;
-	
-	*"x86_64"*)
-	file="HTFanControl_Linux.zip"
-	;;
-esac
+if [[ $(getconf LONG_BIT) =~ "32" ]]
+then
+    file="HTFanControl_RasPi.zip"
+elif [[ $(uname -m) =~ "aarch" ]]
+then
+    file="HTFanControl_RasPi64.zip"
+else
+    file="HTFanControl_Linux.zip"
+fi
 
 read -p "Are you sure you want to INSTALL HTFanControl? [y/n]" -n 1 -r
 echo
